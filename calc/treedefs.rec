@@ -1,0 +1,227 @@
+
+%dir calc
+%namespace calc
+
+
+%define proofterm ( prf_nop ) 
+
+%option propcut { prf_propcut } => fm : logic::term
+%option cut { prf_cut } =>    
+   // We eat a formula. Hence we don't need the cut formula. 
+
+%option nop { prf_nop } => 
+
+%option clausify { prf_clausify } => 
+%option triple { prf_chain } => [ fm : proofterm ] 
+                          
+%option name { prf_name } => name : std::string
+%option call { prf_call } => nr : size_t, name : std::string
+%option ontop { prf_get } => name : std::string
+
+
+%option orelim { prf_orelim } => [ branch : proofterm ] 
+%option existselim { prf_existselim } => 
+               name : std::string, intro : proofterm 
+
+%option expand { prf_expand } => 
+   ident : identifier, occ : size_t, parent : proofterm 
+
+%option forallintro { prf_forallintro } =>
+   parent : proofterm, [ var : logic::vartype ]
+%option forallelim { prf_forallelim } =>
+   parent : proofterm, nrforall : size_t, [ value : logic::term ] 
+
+%option define { prf_define } =>
+   name : std::string, val : logic::term, parent : proofterm
+
+%option andintro { prf_andintro } => [ parent : proofterm ]
+%option select { prf_select } => parent : proofterm, [ nr : size_t ]
+
+%option simplify { prf_simplify } => parent : proofterm 
+
+%option fake { prf_fake } => goal : logic::term
+%option show { prf_show } => comment : std::string, prf : proofterm
+
+%h_incl {
+   #include "sequent.h"
+}
+
+%h_before {
+   bool very_equal( const std::vector< logic::term > & v1, const std::vector< logic::term > & v2 );
+}
+
+%h_methods {
+
+   void print( indentation ind, std::ostream& out ) const;
+}
+
+
+%cpp_back
+{
+   void calc::proofterm::print( indentation ind, std::ostream& out ) const
+   {
+      switch( sel( ))
+      {
+//      case prf_truthconst:
+//         out << ind << "truthconst\n";
+//         return; 
+
+//      case prf_ident:
+//         out << ind << "ident " << view_ident( ). ident( ) << "\n"; 
+//         return; 
+
+      case prf_clausify:
+         out << ind << "clausify\n";
+         return; 
+
+      case prf_propcut:
+         out << ind << "propcut: " << view_propcut( ). fm( ) << "\n";
+         return;
+
+     // case prf_cut:
+     //    {
+     //       out << ind << "cut:\n";
+     //       auto cut = view_cut( ); 
+     //       cut. first( ). print( ind + 3, out );
+     //       out << ind << "assumed as " << view_cut( ). name( ) << " in\n";
+     //       cut. second( ). print( ind + 3, out );
+     //       return;
+     //    }
+
+//      case prf_orelim:
+//         {
+//            auto elim = view_orelim( ); 
+//            out << ind << "orelim using subform " << elim. nror( ) << " in\n";
+//            elim. parent( ). print( ind + 3, out );  
+//            for( size_t i = 0; i != elim. size( ); ++ i )
+//            {
+//               out << ind << "branch " << i << ", call it ";
+//               out << elim. name(i) << " in\n";
+//               elim. branch(i). print( ind + 3, out );
+//            }
+//            return;
+//         }
+
+     // case prf_existselim:
+     //    {
+     //       auto elim = view_existselim( );
+     //       out << ind << "existselim using subform ";
+     //       out << elim. nrexists( ) << " in\n";
+     //       elim. parent( ). print( ind + 3, out );
+     //       out << ind << "as " << elim. name( ) << " in\n";
+     //       elim. intro( ). print( ind + 3, out );
+     //       return; 
+     //    }
+
+      case prf_expand:
+         {
+            auto exp = view_expand( );
+            out << ind << "expand ";
+            out << exp. ident( ) << ", occurrence " << exp. occ( ) << " in\n";
+            exp. parent( ). print( ind + 3, out ); 
+            return;  
+         }
+
+      case prf_define:
+         {
+            auto def = view_define( );
+            out << ind << "define ";
+            out << def. name( ) << " := " << def. val( ) << "\n";
+            out << ind << "in\n";
+            def. parent( ). print( ind + 3, out );
+            return;
+         }
+
+      case prf_forallintro:
+         {
+            auto intro = view_forallintro( );
+            out << ind << "forallintro with";
+            for( size_t i = 0; i != intro. size( ); ++ i )
+            {
+               if(i)
+                  out << ", ";
+               out << intro. var(i);
+            }
+            out << "\n";
+            intro. parent( ). print( ind + 3, out );
+            return; 
+         }
+ 
+      case prf_forallelim:
+         {
+            auto elim = view_forallelim( );
+            out << ind << "forallelim using subform ";
+            out << elim. nrforall( ) << "\n";
+            out << ( ind + 3 ); 
+            for( size_t i = 0; i != elim. size( ); ++ i )
+            {
+               if(i) out << ",  ";
+               out << elim. value(i) << "\n";
+            }
+            out << ind << "on\n";
+            elim. parent( ). print( ind + 3, out );
+            return;
+         }
+
+      case prf_andintro:
+         {
+           auto intro = view_andintro( );
+           out << ind << "andintro:\n";
+           for( size_t i = 0; i != intro. size( ); ++ i )
+           {
+              intro. parent(i). print( ind + 3, out ); 
+           }
+           return;
+         }
+
+      case prf_select:
+         {
+            auto elim = view_select( );
+            out << ind << "select";
+            for( size_t i = 0; i != elim. size( ); ++ i )
+            {
+               if(i) 
+                  out << ",";
+               else
+                  out << " ";
+
+               out << elim. nr(i);
+            }
+            out << " from\n";
+            elim. parent( ). print( ind + 3, out );
+            return;
+         }
+
+      case prf_simplify:
+         {
+            auto simp = view_simplify( );
+            out << ind << "simplify\n";
+            simp. parent( ). print( ind + 3, out );
+            return;
+         }
+
+      case prf_fake:
+         {
+            out << ind << "faking ";
+            auto mag = view_fake( );
+            out << mag. goal( ) << "\n";
+            return;
+         }
+
+      case prf_show:
+         {
+            auto show = view_show( );
+            out << ind << "show as ";
+            out << "\"" << show. comment( ) << "\"\n";
+            show. prf( ). print( ind + 3, out );
+            return;
+         }
+      }
+
+      out << sel( ) << "\n";
+      throw std::logic_error( "don't know how to print" );
+   }
+
+}
+
+ 
