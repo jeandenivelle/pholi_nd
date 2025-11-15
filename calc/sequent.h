@@ -4,9 +4,7 @@
 
 #include <map>
 #include <vector>
-#include <optional>
 #include <string>
-#include <string_view>
 
 #include "errorstack.h"
 #include "indexedstack.h"
@@ -17,63 +15,56 @@
 
 namespace calc
 {
-
-
-   struct formula
-   {
-      std::string name;    // Our name (or empty string if we don't have one).
-
-      std::vector< size_t > hides;
-         // Formulas that we are hiding.
-
-      bool hidden; 
-         // True if we by ourselves are hidden.
-
-      size_t level;   // Size of context that we depend on.
-                      // 0 means that we are not using anything from ctxt.
-
-      forall< disjunction< exists< logic::term >>> form;
-
-      std::string comment;
-
-      formula( size_t level, 
-               forall< disjunction< exists< logic::term >>> && form )
-         : level( level ),
-           form( std::move( form ))
-      { }  
-
-      formula( formula&& ) noexcept = default;
-      formula& operator = ( formula&& ) noexcept = default;
-
-      void ugly( std::ostream& out ) const;  
-   };
-   
-   
+ 
    // Sequent is not a complete class. It is more like a view
    // into a beliefstate.
 
    struct sequent
    {
+
+      struct lemma 
+      {
+         forall< disjunction< exists< logic::term >>> cls;
+         size_t nrvars;   // In context.
+      };
+
+      struct level
+      {
+         std::vector< forall< disjunction< exists< logic::term >>>> rpn; 
+         size_t nrvars;   // In context.
+
+         std::vector< std::string > names; 
+            // So that they can be backtracked.
+
+         level( size_t nrvars )
+            : nrvars( nrvars )
+         { }
+
+      };
+
+       
       logic::context ctxt;
       indexedstack< std::string, size_t > db;
          // db is needed because we typecheck terms during 
-         // proofchecking.
+         // proofchecking. 'db' stands for De Bruijn. 
 
       std::map< size_t, logic::term > defs;
          // If a position in ctxt is a definition,
          // its value is here.
 
-      std::vector< formula > forms;
-         // The formulas, see above. 
+      std::vector< level > lev;
+         // Stack of stacks of derived formulas. 
 
-      std::map< std::string, std::vector< size_t >> names;
-         // Quick lookup of names.
-      
-      sequent( ) noexcept = default;
+      std::map< std::string, std::vector< lemma >> lemmas;
+         // Last one is the current one.
+
+      sequent( ) noexcept { } 
       sequent( sequent&& ) noexcept = default;
       sequent& operator = ( sequent&& ) noexcept = default;
 
       size_t nrvars( ) const { return ctxt. size( ); } 
+      size_t nrlevels( ) const { return lev. size( ); }
+
 #if 0
       void restore( size_t s ); 
 #endif
@@ -85,15 +76,28 @@ namespace calc
       // The number returned can be used for restoring the context:
 
       size_t assume( const std::string& name, const logic::type& tp );
+
       size_t define( const std::string& name, const logic::term& val,
                      const logic::type& tp );
 
-      void assume( forall< disjunction< exists< logic::term >>> && form );
+      void addlevel( );
+      void poplevel( );
+
+      void push( forall< disjunction< exists< logic::term >>> form );
+      void pop( );
+
+      forall< disjunction< exists< logic::term >>> & 
+      get( size_t ind );
+
+      const forall< disjunction< exists< logic::term >>> & 
+      get( size_t ind ) const;
+
    };
 
    inline std::ostream& operator << ( std::ostream& out, const sequent& seq )
    {
-      // seq. pretty( out );
+      throw std::runtime_error( "<< not implemented" );
+      seq. ugly( out );
       return out;
    }
 }

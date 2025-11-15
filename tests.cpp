@@ -434,9 +434,16 @@ void tests::smallproofs( const logic::beliefstate& blfs, errorstack& err )
       auto nr = seq. define( "goal",
                              blfs. at( f. front( )). view_form( ). fm( ),
                              logic::type( logic::type_form ));
+      seq. addlevel( );
       seq. ugly( std::cout );
 
+      auto split = proofterm( prf_orexistselim,
+         { proofterm( prf_chain, { prf_nop } ),
+           proofterm( prf_chain, { prf_nop } ) } );
+ 
       auto prf = proofterm( prf_propcut, "goal"_unchecked );
+      prf = proofterm( prf_chain, 
+         { prf, split } );
       prf. print( indentation( ), std::cout );
 
       checkproof( blfs, prf, seq, err );

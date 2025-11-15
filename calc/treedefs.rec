@@ -2,26 +2,22 @@
 %dir calc
 %namespace calc
 
-
 %define proofterm ( prf_nop ) 
 
 %option propcut { prf_propcut } => fm : logic::term
 %option cut { prf_cut } =>    
    // We eat a formula. Hence we don't need the cut formula. 
 
+%option chain { prf_chain } => [ step : proofterm ] 
 %option nop { prf_nop } => 
 
 %option clausify { prf_clausify } => 
-%option triple { prf_chain } => [ fm : proofterm ] 
-                          
+
 %option name { prf_name } => name : std::string
 %option call { prf_call } => nr : size_t, name : std::string
 %option ontop { prf_get } => name : std::string
 
-
-%option orelim { prf_orelim } => [ branch : proofterm ] 
-%option existselim { prf_existselim } => 
-               name : std::string, intro : proofterm 
+%option orexistselim { prf_orexistselim } => [ branch : proofterm ] 
 
 %option expand { prf_expand } => 
    ident : identifier, occ : size_t, parent : proofterm 
@@ -88,30 +84,32 @@
      //       return;
      //    }
 
-//      case prf_orelim:
-//         {
-//            auto elim = view_orelim( ); 
-//            out << ind << "orelim using subform " << elim. nror( ) << " in\n";
-//            elim. parent( ). print( ind + 3, out );  
-//            for( size_t i = 0; i != elim. size( ); ++ i )
-//            {
-//               out << ind << "branch " << i << ", call it ";
-//               out << elim. name(i) << " in\n";
-//               elim. branch(i). print( ind + 3, out );
-//            }
-//            return;
-//         }
+      case prf_chain: 
+         {
+            out << ind << "chain\n";
+            auto ch = view_chain( );
+            for( size_t i = 0; i != ch. size( ); ++ i )
+               ch. step(i). print( ind + 3, out );
+            return;
+         }
 
-     // case prf_existselim:
-     //    {
-     //       auto elim = view_existselim( );
-     //       out << ind << "existselim using subform ";
-     //       out << elim. nrexists( ) << " in\n";
-     //       elim. parent( ). print( ind + 3, out );
-     //       out << ind << "as " << elim. name( ) << " in\n";
-     //       elim. intro( ). print( ind + 3, out );
-     //       return; 
-     //    }
+      case prf_nop:
+         {
+            out << ind << "nop\n";
+            return;
+         } 
+
+      case prf_orexistselim:
+         {
+            auto elim = view_orexistselim( ); 
+            out << ind << "orexistselim\n";
+            for( size_t i = 0; i != elim. size( ); ++ i )
+            {
+               out << ind << "branch " << i << ":\n";
+               elim. branch(i). print( ind + 3, out );
+            }
+            return;
+         }
 
       case prf_expand:
          {

@@ -85,9 +85,6 @@ void
 calc::checkproof( const logic::beliefstate& blfs,
                   proofterm& prf, sequent& seq, errorstack& err )
 {
-   std::cout << "checking\n";
-   prf. print( indentation( ), std::cout );
-
    switch( prf. sel( ))
    {
 
@@ -128,30 +125,54 @@ calc::checkproof( const logic::beliefstate& blfs,
          res. make_anf2( );
          return res. value( );
       }
+#endif
 
-   case prf_orelim:
+   case prf_orexistselim:
       {
-         auto elim = prf. view_orelim( ); 
-         auto conj = proofcheck( elim. parent( ), seq, err );
-
-         if( !conj. has_value( ))
-            return conj;
-
-         auto disj = optform( std::move( conj ), "or-elim", seq, err );
-         disj. musthave( logic::op_kleene_and );
-         disj. replacebysub( elim. nror( ));
-         disj. musthave( logic::op_kleene_or );
-         disj. aritymustbe( elim. size( ));
-         if( !disj )
-            return { };
+         auto elim = prf. view_orexistselim( ); 
+         seq. ugly( std::cout );
+         auto mainform = std::move( seq. get(0));
+            // Should be a universally quantified disjunction,
+            // without variables.
  
-         auto kl = disj. value( ). view_kleene( );
-         size_t seqsize = seq. size( );
-         bool success = true;
-         clause intro;
+         seq. pop( );
 
-         for( size_t i = 0; i != kl. size( ); ++ i )
+         std::cout << "mainform = " << mainform << "\n";
+         if( mainform. vars. size( ))
          {
+            throw std::runtime_error( "there are universal variables" );
+
+         }
+
+         const disjunction< exists< logic::term >> disj = 
+            std::move( mainform. body );
+
+         size_t nrvars = seq. nrvars( );
+         size_t nrlevels = seq. nrlevels( );
+
+         for( const auto& sub : disj ) 
+         {
+            std::cout << "sub = " << sub << "\n"; 
+ 
+            // Assume the existential variables:
+ 
+            for( size_t i = 0; i != sub. nrvars( ); ++ i )
+            {
+               seq. assume( sub. vars[i]. pref, sub. vars[i]. tp );
+            }
+
+            // Create a new assumption level:
+
+            seq. addlevel( );
+
+            seq. push( forall( disjunction{ exists( sub. body ) } ));
+
+            std::cout << "============================\n";
+            seq. ugly( std::cout );  
+            std::cout << "\n";
+#if 0
+         bool success = true;
+
             {
                auto sub = optform( kl. sub(i), "or-elim", seq, err );
                sub. make_anf2( );
@@ -175,19 +196,23 @@ calc::checkproof( const logic::beliefstate& blfs,
             }
 
             seq. restore( seqsize );
+#endif
+            while( seq. nrlevels( ) > nrlevels )
+               seq. poplevel( );
          }
-
+#if 0
          if( !success )
             return { };
 
          return disjunction( intro );
-      }
 #endif
+         throw std::runtime_error( "keine ahnung" );
+      }
 
    case prf_propcut:
       {
          auto cut = prf. view_propcut( );
-        
+ 
          auto fm = cut. extr_fm( );  
          size_t s = seq. nrvars( );
          fm = replace_debruijn( seq. db, fm );
@@ -200,12 +225,28 @@ calc::checkproof( const logic::beliefstate& blfs,
          }
 
          cut. update_fm( fm );
-         seq. assume( forall( disjunction{ 
+         seq. push( forall( disjunction{ 
                 exists( logic::term( logic::op_not, fm )), exists(fm) } ));
  
          return;
       }
 
+   case prf_chain:
+      {
+         auto ch = prf. view_chain( );
+         size_t nrvars = seq. nrvars( );
+         // size_t nrforms = seq. nrforms( );
+
+         for( size_t i = 0; i != ch. size( ); ++ i )
+         {
+            auto step = ch. extr_step(i);
+            checkproof( blfs, step, seq, err );
+            ch. update_step( i, std::move( step ));
+         } 
+         std::cout << "crashing:\n"; 
+         seq. ugly( std::cout );
+         throw std::runtime_error( "still no clue what to do of course" );
+      }
 #if 0
    case prf_expand:
       {
@@ -290,26 +331,6 @@ calc::checkproof( const logic::beliefstate& blfs,
    
    case prf_existselim:
       {
-         auto elim = prf. view_existselim( );
-         auto conj = proofcheck( elim. parent( ), seq, err );
-
-         if( !conj. has_value( ))
-            return conj;
-
-         auto exists = optform( conj, "exists-elim", seq, err );
-         exists. musthave( logic::op_kleene_and ); 
-         exists. replacebysub( elim. nrexists( ));
-         exists. musthave( logic::op_kleene_or );
-         exists. getuniquesub( );
-         exists. musthave( logic::op_kleene_exists );
-
-         if( !exists )
-            return { };
-
-         // At this point, we are sure that existselim can be applied:
-
-         size_t seqsize = seq. size( );
-
          std::vector< logic::vartype > assumptions;
          std::vector< logic::exact > exactnames;
             // The names that seq will give to the assumptions.
@@ -318,8 +339,6 @@ calc::checkproof( const logic::beliefstate& blfs,
          while( exists. value( ). sel( ) == logic::op_kleene_exists )
          {
             auto ex = exists. value( ). view_quant( );
-            for( size_t i = 0; i != ex. size( ); ++ i )
-               assumptions. push_back( ex. var(i));
 
             exists. value( ) = ex. body( );
          }

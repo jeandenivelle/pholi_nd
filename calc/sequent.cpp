@@ -2,11 +2,13 @@
 #include "sequent.h"
 #include "logic/pretty.h"
 
+#if 0
 void 
 calc::formula::ugly( std::ostream& out ) const
 {
    out << form << "\n";
 }
+#endif
 
 size_t
 calc::sequent::assume( const std::string& name,
@@ -18,7 +20,6 @@ calc::sequent::assume( const std::string& name,
    return nr;
 }
 
-   
 size_t 
 calc::sequent::define( const std::string& name,
                        const logic::term& val, 
@@ -29,37 +30,55 @@ calc::sequent::define( const std::string& name,
    return nr;
 }
 
-void 
-calc::sequent::assume( forall< disjunction< exists< logic::term >>> && form )
+void
+calc::sequent::addlevel( )
 {
-   auto prep = formula( nrvars( ), std::move( form ));
-   forms. push_back( std::move( prep ));
+   std::cout << "adding a level\n";
+   lev. push_back( level( nrvars( )));
+}
+
+void 
+calc::sequent::poplevel( )
+{
+   if( lev. size( ) == 0 )
+      throw std::logic_error( "no level to pop" );
+
+   for( const auto& name : lev. back( ). names )
+   {
+      lemmas. at( name ). pop_back( );
+   }
+
+   lev. pop_back( );
+}
+
+void 
+calc::sequent::push( forall< disjunction< exists< logic::term >>> form )
+{
+   if( lev. size( ) == 0 )
+      throw std::logic_error( "push: stack is empty" );
+
+   lev. back( ). rpn. push_back( std::move( form ));
+}
+
+void 
+calc::sequent::pop( )
+{
+   if( lev. size( ) == 0 || lev. back( ). rpn. size( ) == 0 )
+      throw std::logic_error( "pop: stack or rpn is empty" );
+
+   lev. back( ). rpn. pop_back( );
+}
+
+auto calc::sequent::get( size_t ind ) -> 
+   forall< disjunction< exists< logic::term >>> & 
+{
+   if( lev. size( ) == 0 || ind >= lev. back( ). rpn. size( ))
+      throw std::logic_error( "get: index too high" ); 
+
+   return lev. back( ). rpn. at( lev. back( ). rpn. size( ) - ind - 1 );
 }
 
 #if 0
-
-std::optional< logic::term >
-calc::sequent::getformula( logic::exact ex, errorstack& err ) const
-{
-   if( blfs. contains( ex ))
-   {
-      const auto& bel = blfs. at( ex );
-      if( bel. sel( ) == logic::bel_thm )
-         return bel. view_thm( ). frm( );
-
-      if( bel. sel( ) == logic::bel_axiom )
-         return bel. view_axiom( ). frm( );
-
-      if( bel. sel( ) == logic::bel_form )
-         return bel. view_form( ). frm( );
-   }
-
-   errorstack::builder bld;
-   bld << "proof checking: name does not refer to formula " << ex << "\n";
-   err. push( std::move( bld ));
-
-   return { };
-}
 
 logic::exact
 calc::sequent::getexactname( size_t i ) const
@@ -100,6 +119,7 @@ calc::sequent::addformula( std::string_view namebase,
 
 #endif
 
+
 void calc::sequent::restore( size_t ss )
 {
    // If anything got blocked, we unblock it:
@@ -137,10 +157,12 @@ void calc::sequent::ugly( std::ostream& out ) const
       out << "   #" << def. first << " := " << def. second << "\n";
   
    out << "\n"; 
-   out << "Formulas:\n";
-   for( const auto& f : forms ) 
+   out << "Levels:\n";
+   for( const auto& l : lev ) 
    {
-      f. ugly( out ); std::cout << "hallo\n";
+      out << "   nrvars = " << l. nrvars << ":\n";
+      for( const auto& f : l. rpn )
+         out << "      " << f << "\n"; 
    } 
 }
 
