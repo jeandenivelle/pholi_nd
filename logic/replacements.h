@@ -53,7 +53,7 @@ namespace logic
    term lift( logic::term tm, size_t dist );
    term sink( logic::term tm, size_t dist );
 
-   // A sparse subst assigns values to some, but not
+   // A sparse subst replace some, but not
    // necessarily all, De Bruijn indices. 
    // Variables that are not in the domain of the substitution,
    // are not changed.
@@ -79,6 +79,7 @@ namespace logic
 
 
    // A single subst replaces #0 by value. 
+   // Remaining variables are decreased by one.
 
    struct singlesubst
    {
@@ -140,29 +141,6 @@ namespace logic
    };
 
 
-   // An introsubst replaces exact names by DeBruijn indices
-   // starting at #0,#1 
-   // We need this substitution due to a design error in
-   // class sequent. In the future, we will implement a correct
-   // sequent class (strictly using DeBruin indices), and remove this class. 
-
-   class introsubst
-   {
-      exact::unordered_map< size_t > map;
-
-   public:
-      introsubst( ) noexcept = default;
-
-      void bind( exact ex );
-
-      term operator( ) ( term t, size_t vardepth, bool& change ) const;
-
-      size_t size( ) const { return map. size( ); }
-
-      void print( std::ostream& out ) const;
-   };
-
-  
    // This is incomplete beta-reduction:
 
    struct betareduction 

@@ -32,7 +32,8 @@ namespace calc
       iterator end( ) { return disj. end( ); }
       const_iterator end( ) const { return disj. end( ); }
 
-      size_t size( ) { return disj. size( ); }
+      size_t size( ) const { return disj. size( ); }
+      const F& at( size_t i ) const { return disj. at(i); }
 
       void print( std::ostream& out ) const
       {
@@ -72,7 +73,8 @@ namespace calc
       iterator end( ) { return conj. end( ); }
       const_iterator end( ) const { return conj. end( ); }
 
-      size_t size( ) { return conj. size( ); }
+      size_t size( ) const { return conj. size( ); }
+      const F& at( size_t i ) const { return conj. at(i); }
 
       void print( std::ostream& out ) const
       {

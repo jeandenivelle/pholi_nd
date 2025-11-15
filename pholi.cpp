@@ -12,6 +12,8 @@
 #include "logic/pretty.h"
 #include "logic/termoperators.h"
 
+#include "calc/localexpander.h"
+
 #include "parsing/parser.h"
 
 void

@@ -21,6 +21,7 @@
 
 %option expand { prf_expand } => 
    ident : identifier, occ : size_t, parent : proofterm 
+%option expandlocal { prf_expandlocal } => var : std::string, occ : size_t
 
 %option forallintro { prf_forallintro } =>
    parent : proofterm, [ var : logic::vartype ]
@@ -118,6 +119,14 @@
             out << exp. ident( ) << ", occurrence " << exp. occ( ) << " in\n";
             exp. parent( ). print( ind + 3, out ); 
             return;  
+         }
+
+      case prf_expandlocal:
+         {
+            auto exp = view_expandlocal( );
+            out << ind << "expand local: ";
+            out << exp. var( ) << ", occurrence " << exp. occ( ) << "\n";
+            return;
          }
 
       case prf_define:

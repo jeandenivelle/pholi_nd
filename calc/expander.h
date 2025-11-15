@@ -11,8 +11,8 @@ namespace calc
    struct expander
    {
       const identifier ident;
-      size_t i;
-      size_t repl;   // Will be replaced.
+      size_t i;      // Counter.
+      size_t repl;   // The occurrence that will be replaced.
  
       const logic::beliefstate& blfs; 
       errorstack& err; 

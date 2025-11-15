@@ -33,7 +33,6 @@ calc::sequent::define( const std::string& name,
 void
 calc::sequent::addlevel( )
 {
-   std::cout << "adding a level\n";
    lev. push_back( level( nrvars( )));
 }
 

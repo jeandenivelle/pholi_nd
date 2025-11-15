@@ -8,6 +8,7 @@
 #include "logic/inspections.h"
 
 #include "expander.h"
+#include "localexpander.h"
 
 #include "printing.h"
 
@@ -150,13 +151,14 @@ calc::checkproof( const logic::beliefstate& blfs,
          size_t nrvars = seq. nrvars( );
          size_t nrlevels = seq. nrlevels( );
 
-         for( const auto& sub : disj ) 
+         for( size_t i = 0; i != disj. size( ); ++ i )
          {
+            const auto& sub = disj. at(i);
             std::cout << "sub = " << sub << "\n"; 
  
             // Assume the existential variables:
  
-            for( size_t i = 0; i != sub. nrvars( ); ++ i )
+            for( size_t i = 0; i != disj. at(i). nrvars( ); ++ i )
             {
                seq. assume( sub. vars[i]. pref, sub. vars[i]. tp );
             }
@@ -166,6 +168,10 @@ calc::checkproof( const logic::beliefstate& blfs,
             seq. addlevel( );
 
             seq. push( forall( disjunction{ exists( sub. body ) } ));
+
+            auto subproof = elim. extr_branch(i);
+            checkproof( blfs, subproof, seq, err );
+            elim. update_branch( i, std::move( subproof ));
 
             std::cout << "============================\n";
             seq. ugly( std::cout );  
@@ -271,7 +277,30 @@ calc::checkproof( const logic::beliefstate& blfs,
          std::cout << "expand returns " << nm << "\n";
          return nm. value( );
       }
+#endif
+   case prf_expandlocal:
+      {
+         auto var = prf. view_expandlocal( ). var( );
+         std::cout << "variable = " << var << "\n";
+         auto p = seq. db. find( var );
+         if( p == seq. db. end( ))
+         {
+            throw std::logic_error( "did not find the variable" );
+         }
 
+         size_t ind = p -> second;
+         std::cout << "index = " << ind << "\n";
+         auto q = seq. defs. find( ind );
+         if( q == seq. defs. end( ))
+         {
+            throw std::logic_error( "variable has no definition" );
+         }
+
+         calc::localexpander exp( seq. nrvars( ) - ind - 1,  q -> second, 0 );
+         std::cout << exp << "\n";
+
+      }
+#if 0
    case prf_define: 
       {
          auto def = prf. view_define( );

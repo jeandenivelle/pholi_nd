@@ -45,6 +45,7 @@
    kleening.cpp
    alternating.cpp
    expander.cpp
+   localexpander.cpp
    projection.cpp
    sequent.cpp
    proofterm.cpp
