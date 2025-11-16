@@ -25,6 +25,24 @@ calc::alternation( logic::selector op )
    throw std::logic_error( "alternation: not a Kleene connective" );
 }
 
+calc::anf< std::pair< logic::term, logic::term >>
+calc::pairtopkleene( const anf< logic::term > & fm )
+{
+   auto res = anf< std::pair< logic::term, logic::term >> ( );
+
+   for( const auto& c : fm )
+   {
+      auto disj = disjunction< exists< logic::term >> ( ); 
+
+      for( auto& d : c. body )
+      {
+                  
+
+      } 
+   }
+
+}
+
 #if 0
 
 logic::term 

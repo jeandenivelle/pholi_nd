@@ -5,14 +5,12 @@
 #include <vector>
 
 #include "logic/term.h"
-#include "logic/context.h"
+
+#include "propositional.h"
+#include "quantifiers.h"
 
 namespace calc
 {
-   bool haskleene( const logic::term& f );
-      // True if main operator is a Kleene operator.
-      // Negation and prop do not count as Kleene operator.
-
    logic::selector quantof( logic::selector op );
       // Returns the quantifier that belongs to op.
       // op_kleene_or  -> op_kleene_exists
@@ -24,10 +22,14 @@ namespace calc
       // op_kleene_and -> op_kleene_or
 
 
-   void 
-   flatten( logic::context& ctxt, const logic::term& f,
-            logic::selector op, unsigned int rank, 
-            std::vector< logic::term > & into );
+   template< typename F >
+   using anf = conjunction< forall< disjunction< exists<F>>>> ;
+
+   anf< std::pair< logic::term, logic::term >>
+   pairkleene( const anf< logic::term > & fm );
+      // First is original formula, second is topkleene.
+
+   void flatten( anf< std::pair< logic::term, logic::term >> & fm );
 
    bool isalternating( const logic::term& f,
                        logic::selector op, unsigned int rank );
