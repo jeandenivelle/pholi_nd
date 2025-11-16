@@ -25,7 +25,8 @@ namespace logic
    // If we can replace somemwhere, we don't try to rewrite
    // the result of the replacement. We still make ALL outermost 
    // replacements. If you don't like that, you can use the non-const 
-   // version, and remember when a replacement was made. 
+   // version, remember when a replacement was made,
+   // and don't make a second. 
 
    template< replacement R > 
    term outermost( const R& repl, term t, size_t vardepth ) 

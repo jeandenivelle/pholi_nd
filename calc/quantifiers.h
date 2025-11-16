@@ -24,7 +24,7 @@ namespace calc
 
       void print( std::ostream& out ) const
       {
-         out << "forall( ";
+         out << "forall(";
          for( auto p = vars. begin( ); p != vars. end( ); ++ p )
          {
             if( p != vars. begin( ))

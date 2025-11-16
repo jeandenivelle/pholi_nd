@@ -82,6 +82,8 @@ namespace calc
 
       void addlevel( );
       void poplevel( );
+      const level& lastlevel( ) const { return lev. back( ); }
+      level& lastlevel( ) { return lev. back( ); }
 
       void push( forall< disjunction< exists< logic::term >>> form );
       void pop( );

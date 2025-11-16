@@ -9,6 +9,7 @@ namespace calc
 
    // Expands a local definition #var := value.
    // Only the i-th occurrence is expanded.
+   // Value will be lifted over ( var + 1 ).
 
    struct localexpander
    {

@@ -129,7 +129,7 @@ void calc::optform::make_anf2( )
    if( ctxt. size( ))
       throw std::logic_error( "context not empty" );
 
-   fm. value( ) = alternating( fm. value( ), logic::op_kleene_and, 2 );
+   // fm. value( ) = alternating( fm. value( ), logic::op_kleene_and, 2 );
 }
 
 #if 0

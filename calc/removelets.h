@@ -14,7 +14,7 @@ namespace calc
    logic::term
    removelets( sequent& seq, logic::context& ctxt, logic::term f );
       // Replace lets by global definitions.
-      // Since lets are rare, we try to parts of f as much as possible. 
+      // Since lets are rare, we try to reuse parts of f as much as possible. 
       // We cannot handle Kleene operators.
 
 }

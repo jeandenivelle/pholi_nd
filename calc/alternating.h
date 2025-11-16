@@ -21,14 +21,8 @@ namespace calc
    logic::selector alternation( logic::selector op );
       // Returns the alternation of op.
       // op_kleene_or -> op_kleene_and
-      // op_kleene_and -> op_keene_or
+      // op_kleene_and -> op_kleene_or
 
-   // Result will be a disjunction of exists of alt_foralls( ).
-
-   logic::term
-   alternating( const logic::term& fm, 
-                logic::selector op, unsigned int rank );
-      // op must be op_kleene_and, or op_kleene_or.
 
    void 
    flatten( logic::context& ctxt, const logic::term& f,

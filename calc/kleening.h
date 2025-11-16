@@ -9,6 +9,7 @@
 
 namespace calc
 {
+
    logic::selector kleenop( logic::selector op );
       // Get the kleening of op, for a monotone operator.
 

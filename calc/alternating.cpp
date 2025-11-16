@@ -25,6 +25,8 @@ calc::alternation( logic::selector op )
    throw std::logic_error( "alternation: not a Kleene connective" );
 }
 
+#if 0
+
 logic::term 
 calc::alternating( const logic::term& f, logic::selector op, 
                    unsigned int rank ) 
@@ -45,6 +47,9 @@ calc::alternating( const logic::term& f, logic::selector op,
    }
 }
 
+#endif
+
+#if 0
 
 void 
 calc::flatten( logic::context& ctxt, const logic::term& frm, 
@@ -81,7 +86,7 @@ calc::flatten( logic::context& ctxt, const logic::term& frm,
    into. push_back( quantify( quantof( op ), ctxt,
                     alternating( frm, alternation( op ), rank - 1 )));
 }
-
+#endif
 
 bool 
 calc::isalternating( const logic::term& f, 

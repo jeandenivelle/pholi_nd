@@ -9,6 +9,7 @@
 
 #include "expander.h"
 #include "localexpander.h"
+#include "outermost.h"
 
 #include "printing.h"
 
@@ -231,6 +232,8 @@ calc::checkproof( const logic::beliefstate& blfs,
          }
 
          cut. update_fm( fm );
+         fm = logic::term( logic::op_prop, fm );
+
          seq. push( forall( disjunction{ 
                 exists( logic::term( logic::op_not, fm )), exists(fm) } ));
  
@@ -271,34 +274,48 @@ calc::checkproof( const logic::beliefstate& blfs,
 
          std::cout << def << "\n"; 
 
-         nm. rewr_outermost( def ); 
          nm. normalize( );
          // nm. make_anf2( );
          std::cout << "expand returns " << nm << "\n";
          return nm. value( );
       }
 #endif
+
    case prf_expandlocal:
       {
          auto var = prf. view_expandlocal( ). var( );
-         std::cout << "variable = " << var << "\n";
-         auto p = seq. db. find( var );
-         if( p == seq. db. end( ))
-         {
-            throw std::logic_error( "did not find the variable" );
-         }
 
-         size_t ind = p -> second;
+         // We have an identifier, we need a De Bruijn index:
+
+         size_t ind = seq. ctxt. size( );
+         {  
+            auto p = seq. db. find( var );
+            if( p == seq. db. end( ))
+            {
+               throw std::logic_error( "did not find the variable" );
+            }
+
+            ind = p -> second;
+         }
          std::cout << "index = " << ind << "\n";
-         auto q = seq. defs. find( ind );
-         if( q == seq. defs. end( ))
+
+         auto def = seq. defs. find( ind );
+         if( def == seq. defs. end( ))
          {
             throw std::logic_error( "variable has no definition" );
          }
 
-         calc::localexpander exp( seq. nrvars( ) - ind - 1,  q -> second, 0 );
-         std::cout << exp << "\n";
+         if( seq. lastlevel( ). nrvars != seq. nrvars( ))
+            throw std::logic_error( "size of context does not fit to level" );
 
+         auto exp = localexpander( seq. nrvars( ) - ind - 1,  def -> second, 
+                                   prf. view_expandlocal( ). occ( ));
+         auto fm = std::move( seq. get(0));
+         seq. pop( );
+         fm = outermost( exp, std::move(fm), 0 );
+         std::cout << "fm after local expansion: " << fm << "\n"; 
+         seq. push( std::move(fm)); 
+         return;
       }
 #if 0
    case prf_define: 

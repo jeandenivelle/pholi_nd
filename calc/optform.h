@@ -49,7 +49,6 @@ namespace calc
          // Both are exact.
 
       void make_anf2( );
-      void normalize( );
       template< logic::replacement R > void rewr_outermost( const R& r )
       {
          if( fm. has_value( ))

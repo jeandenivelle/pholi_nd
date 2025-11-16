@@ -26,7 +26,7 @@ namespace calc
    restriction( const logic::context& ctxt, 
                 const logic::debruijn_counter& used ); 
       // Restriction of ctxt to the used variables. 
-      // This function should be phased out!!
+      // This function should be removed!!
 
    logic::term
    application( logic::term fm, const logic::debruijn_counter& vars );
