@@ -17,8 +17,15 @@ namespace calc
       F body; 
 
       forall( ) noexcept = default;
-      forall( F&& body ) noexcept : body( std::move( body )) { }
-      forall( const F& body ) : body( body ) { }
+
+      explicit forall( F body ) 
+         : body( std::move( body )) 
+      { }
+
+      explicit forall( std::vector< logic::vartype > vars, F body ) 
+         : vars( std::move( vars )),
+           body( std::move( body ))
+      { }
 
       size_t nrvars( ) const { return vars. size( ); }
 
@@ -44,8 +51,15 @@ namespace calc
       F body;
 
       exists( ) noexcept = default;
-      exists( F&& body ) noexcept : body( std::move( body )) { }
-      explicit exists( const F& body ) : body( body ) { }
+
+      explicit exists( F body ) 
+        : body( std::move( body )) 
+      { }
+
+      explicit exists( std::vector< logic::vartype > vars, F body )
+         : vars( std::move( vars )),
+           body( std::move( body ))
+      { }
 
       size_t nrvars( ) const { return vars. size( ); }
 

@@ -13,16 +13,13 @@ namespace calc
       std::vector<F> disj;
 
       disjunction( ) noexcept = default;
-      disjunction( std::initializer_list<F> init ) 
+      disjunction( const std::initializer_list<F> init ) 
          : disj( init ) 
       { }
 
-      void append( F&& f )
+      void append( F f )
          { disj. push_back( std::move(f)); }
       
-      void append( const F& f )
-         { disj. push_back(f); } 
- 
       using iterator = std::vector<F>  :: iterator;
       using const_iterator = std::vector<F> :: const_iterator;
 
@@ -57,14 +54,14 @@ namespace calc
       std::vector<F> conj;
 
       conjunction( ) noexcept = default;
+      conjunction( const std::initializer_list<F> init )
+         : conj( init )
+      { }
 
-      void append( F&& f )
+      void append( F f )
          { conj. push_back( std::move(f)); }
 
-      void append( const F& f )
-         { conj. push_back(f); }
-
-      using iterator = std::vector<F>  :: iterator;
+      using iterator = std::vector<F> :: iterator;
       using const_iterator = std::vector<F> :: const_iterator;
 
       iterator begin( ) { return conj. begin( ); }

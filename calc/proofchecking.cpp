@@ -10,6 +10,7 @@
 #include "expander.h"
 #include "localexpander.h"
 #include "outermost.h"
+#include "alternating.h"
 
 #include "printing.h"
 
@@ -314,6 +315,9 @@ calc::checkproof( const logic::beliefstate& blfs,
          seq. pop( );
          fm = outermost( exp, std::move(fm), 0 );
          std::cout << "fm after local expansion: " << fm << "\n"; 
+         anf< logic::term > conj;
+         conj. append(fm);
+         conj = flatten( conj );
          seq. push( std::move(fm)); 
          return;
       }

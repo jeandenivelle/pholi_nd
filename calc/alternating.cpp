@@ -25,23 +25,93 @@ calc::alternation( logic::selector op )
    throw std::logic_error( "alternation: not a Kleene connective" );
 }
 
-calc::anf< std::pair< logic::term, logic::term >>
-calc::pairtopkleene( const anf< logic::term > & fm )
+calc::anf< logic::term >
+calc::flatten( const anf< logic::term > & conj )
 {
-   auto res = anf< std::pair< logic::term, logic::term >> ( );
-
-   for( const auto& c : fm )
+   anf< logic::term > conj2; 
+   for( const auto& c : conj )
    {
-      auto disj = disjunction< exists< logic::term >> ( ); 
+      std::vector< logic::vartype > ctxt = c. vars; 
 
-      for( auto& d : c. body )
+      const auto& disj = c. body;
+      if( disj. size( ) == 1 && disj. at(0). nrvars( ) == 0 )
       {
-                  
+         std::vector< logic::vartype > ctxt = c. vars;
+         flatten( conj2, ctxt, disj. at(0). body ); 
 
-      } 
+      }
+   }
+   return conj2;
+}
+
+void
+calc::flatten( anf< logic::term > & conj,
+               std::vector< logic::vartype > & ctxt, 
+               const disjunction< exists< logic::term >> & disj )
+{
+   std::cout << "\n\n";
+   std::cout << "disj = " << disj << "\n";
+
+   if( disj. size( ) == 0 )
+      return;
+
+   if( disj. size( ) == 1 && disj. at(0). nrvars( ) == 0 )
+   {
+      auto topkleened = kleene_top( disj. at(0). body, pol_pos );
+      std::cout << "topkleened = " << topkleened << "\n";
+         
+      std::cout << "it is the case\n";
    }
 
+   disjunction< exists< logic::term >> disj2;
+   for( auto& d : disj )
+   {
+      std::vector< logic::vartype > ctxt = d. vars;
+      // flatten( disj2, ctxt, 
+   }
+ 
+#if 0
+   auto newdisj = disjunction< exists< logic::term >> ( );
+   logic::context ctxt;
+#endif
 }
+
+
+void 
+calc::flatten( anf< logic::term > & conj,
+               std::vector< logic::vartype > & ctxt,
+               const logic::term& fm )
+{
+   std::cout << "flattening : " << fm << "\n";
+   auto kln = kleene_top( fm, pol_pos );
+   std::cout << kln << "\n";
+
+   if( kln. sel( ) == logic::op_exists &&
+       kln. view_quant( ). size( ) == 1 )
+   {
+      flatten( conj, ctxt, kln. view_quant( ). body( ));
+      return; 
+   }
+
+   if( kln. sel( ) == logic::op_kleene_or &&
+       kln. view_kleene( ). size( ) == 1 )
+   {
+      flatten( conj, ctxt, kln. view_kleene( ). sub(0));
+      return;
+   }
+
+   if( kln. sel( ) == logic:: op_kleene_and )
+      throw std::logic_error( "kleene_and" );
+
+   if( kln. sel( ) == logic::op_kleene_forall )
+      throw std::logic_error( "kleene_forall" );
+
+   auto ex = disjunction( { exists( fm ) } );
+  
+   conj. append( forall( ctxt, std::move( ex )));
+}
+
+
 
 #if 0
 
@@ -105,46 +175,6 @@ calc::flatten( logic::context& ctxt, const logic::term& frm,
                     alternating( frm, alternation( op ), rank - 1 )));
 }
 #endif
-
-bool 
-calc::isalternating( const logic::term& f, 
-                     logic::selector op, unsigned int rank )
-{
-   if( f. sel( ) == logic::op_kleene_and )
-   {
-      throw std::logic_error( "not implemented" );
-   }
-
-   if( f. sel( ) == logic::op_kleene_or )
-   {
-      auto kl = f. view_kleene( );
-      for( size_t i = 0; i != kl. size( ); ++ i )
-      {
-         const auto* p = &kl. sub(i);
-
-#if 0
-         // If it is a Kleene exists, we replace p by the body: 
-
-         if( p -> sel( ) == logic::op_kleene_exists )
-            p = &( p -> view_quant( ). body( ));
-       
-         if( p -> sel( ) == logic::op_kleene_and )
-         {
-            if( !isinanf( *p ))
-               return false;
-         }
-         else
-         {
-            if( !isliteral( *p ))
-               return false;
-         }
-#endif
-      }
-      return true;
-   }
-   return false;
-}
-
 
 #if 0
 

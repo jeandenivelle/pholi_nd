@@ -109,26 +109,8 @@ logic::term calc::kleene_top( const logic::term& f, polarity pol )
          return term( demorgan( pol, op ), { sub1, sub2 } );
       }
 
-   case op_kleene_and:
-   case op_kleene_or: 
-      {
-         auto kl = f. view_kleene( );
-         if( kl. size( ) == 1 )
-            return kleene_top( kl. sub(0), pol );
-
-         if( pol == pol_neg )
-         {
-            throw 
-            std::logic_error( "kleene top: Kleene operator must be positive" );
-         }
-
-         return f;
-      }
-
    case op_forall:
-   case op_kleene_forall:
    case op_exists:
-   case op_kleene_exists:
       {
          auto q = f. view_quant( );
          auto body = apply( q. body( ), pol );
