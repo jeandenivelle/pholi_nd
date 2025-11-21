@@ -314,10 +314,13 @@ calc::checkproof( const logic::beliefstate& blfs,
          auto fm = std::move( seq. get(0));
          seq. pop( );
          fm = outermost( exp, std::move(fm), 0 );
-         std::cout << "fm after local expansion: " << fm << "\n"; 
+         std::cout << "fm after local expansion: " << fm << "\n\n"; 
          anf< logic::term > conj;
          conj. append(fm);
          conj = flatten( conj );
+         std::cout << conj << "\n";
+
+         throw std::logic_error( "after flattening" );
          seq. push( std::move(fm)); 
          return;
       }

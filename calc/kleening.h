@@ -10,6 +10,17 @@
 namespace calc
 {
 
+   bool canbe_pi( const logic::term& fm );
+   bool canbe_pi_prop( const logic::term& fm );
+      // True if main Kleene operator can be nontrivial kleene-forall
+      // or conjunction.
+
+   bool canbe_sigma( const logic::term& fm );
+   bool canbe_sigma_prop( const logic::term& fm );
+      // True if main Kleene operator can be nontrivial kleene-exists or
+      // disjunction.
+ 
+ 
    logic::selector kleenop( logic::selector op );
       // Get the kleening of op, for a monotone operator.
 
@@ -22,9 +33,8 @@ namespace calc
       // Return prop(f) or not( prop(f)).
 
    logic::term kleene_top( const logic::term& f, polarity pol );
-   logic::term kleene_top_prop( const logic::term& f, polarity pol ); 
-      // Try to get a Kleene operator on top. 
- 
+   logic::term kleene_top_prop( const logic::term& f, polarity pol );
+
 }
 
 #endif

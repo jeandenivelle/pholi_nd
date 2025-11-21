@@ -1,91 +1,96 @@
 
 #include "alternating.h"
 #include "kleening.h"
-#include "util.h"
 
-logic::selector
-calc::quantof( logic::selector op )
+
+namespace
 {
-   if( op == logic::op_kleene_and )
-      return logic::op_kleene_forall;
-   if( op == logic::op_kleene_or )
-      return logic::op_kleene_exists;
-   std::cout << op << "\n";
-   throw std::logic_error( "quantof: not a Kleene connective" );
+
+   void 
+   print( std::ostream& out, const std::vector< logic::vartype > & ctxt )
+   {
+      out << "[";  
+      for( auto p = ctxt. begin( ); p != ctxt. end( ); ++ p )
+      {
+         if( p == ctxt. begin( ))
+            out << " ";
+         else
+            out << ", ";
+         out << *p;
+      }
+      out << " ] :   ";
+   }
+
+
+   void appendvars( std::vector< logic::vartype > & ctxt,
+                    const logic::term& fm )
+   {
+      auto quant = fm. view_quant( );
+      for( size_t i = 0; i != quant. size( ); ++ i )
+         ctxt. push_back( quant. var(i));
+   }
+
+
+   void
+   restore( std::vector< logic::vartype > & ctxt, size_t s )
+   {
+
+
+   }
+
 }
 
-logic::selector
-calc::alternation( logic::selector op )
-{
-   if( op == logic::op_kleene_and )
-      return logic::op_kleene_or;
-   if( op == logic::op_kleene_or )
-      return logic::op_kleene_and;
-   std::cout << op << "\n";
-   throw std::logic_error( "alternation: not a Kleene connective" );
-}
 
 calc::anf< logic::term >
-calc::flatten( const anf< logic::term > & conj )
+calc::flatten( anf< logic::term > conj )
 {
+   // We do two passes: In the first, we try to flatten 
+   // and/forall. 
+   // In the second, we flatten or/exists.
+
    anf< logic::term > conj2; 
-   for( const auto& c : conj )
+   for( auto& cl : conj )
    {
-      std::vector< logic::vartype > ctxt = c. vars; 
-
-      const auto& disj = c. body;
-      if( disj. size( ) == 1 && disj. at(0). nrvars( ) == 0 )
+      if( cl. body. size( ) == 1 && cl. body. at(0). nrvars( ) == 0 )
       {
-         std::vector< logic::vartype > ctxt = c. vars;
-         flatten( conj2, ctxt, disj. at(0). body ); 
+         std::vector< logic::vartype > ctxt = std::move( cl. vars );
+         conjunction< forall< logic::term >> res;
+         flatten( ctxt, pol_pos, cl. body. at(0). body, res );
 
+         for( auto& c : res )
+         {
+            conj2. append( forall( c. vars, disjunction( { exists( c. body ) } )));
+         }
       }
    }
    return conj2;
 }
 
-void
-calc::flatten( anf< logic::term > & conj,
-               std::vector< logic::vartype > & ctxt, 
-               const disjunction< exists< logic::term >> & disj )
-{
-   std::cout << "\n\n";
-   std::cout << "disj = " << disj << "\n";
-
-   if( disj. size( ) == 0 )
-      return;
-
-   if( disj. size( ) == 1 && disj. at(0). nrvars( ) == 0 )
-   {
-      auto topkleened = kleene_top( disj. at(0). body, pol_pos );
-      std::cout << "topkleened = " << topkleened << "\n";
-         
-      std::cout << "it is the case\n";
-   }
-
-   disjunction< exists< logic::term >> disj2;
-   for( auto& d : disj )
-   {
-      std::vector< logic::vartype > ctxt = d. vars;
-      // flatten( disj2, ctxt, 
-   }
- 
-#if 0
-   auto newdisj = disjunction< exists< logic::term >> ( );
-   logic::context ctxt;
-#endif
-}
 
 
 void 
-calc::flatten( anf< logic::term > & conj,
-               std::vector< logic::vartype > & ctxt,
-               const logic::term& fm )
+calc::flatten( std::vector< logic::vartype > & ctxt,
+               polarity pol,
+               const logic::term& fm,
+               conjunction< forall< logic::term >> & conj )
 {
-   std::cout << "flattening : " << fm << "\n";
-   auto kln = kleene_top( fm, pol_pos );
-   std::cout << kln << "\n";
+   std::cout << "flatten-conj " << pol << " :  " << fm << " " << "\n";
 
+   using namespace logic;
+
+   switch( fm. sel( ))
+   {
+
+   case op_not:
+      flatten( ctxt, -pol, fm. view_unary( ). sub( ), conj );
+      return;
+
+   case op_prop:
+      flatten_prop( ctxt, pol, fm. view_unary( ). sub( ), conj );
+      return;
+
+
+#if 0
    if( kln. sel( ) == logic::op_exists &&
        kln. view_quant( ). size( ) == 1 )
    {
@@ -109,6 +114,126 @@ calc::flatten( anf< logic::term > & conj,
    auto ex = disjunction( { exists( fm ) } );
   
    conj. append( forall( ctxt, std::move( ex )));
+#endif
+   }
+
+   std::cout << "flatten-conj " << pol << " :  " << fm. sel( ) << "\n";
+   throw std::logic_error( "operator not implemented" );
+}
+
+
+void
+calc::flatten( std::vector< logic::vartype > & ctxt, 
+               polarity pol,
+               const logic::term& fm,
+               disjunction< exists< logic::term >> & disj )
+{
+   std::cout << "flatten-disj " << pol << " :  " << fm << " " << "\n";
+
+   using namespace logic;
+
+   switch( fm. sel( ))
+   {
+
+   case op_not:
+      flatten( ctxt, -pol, fm. view_unary( ). sub( ), disj );
+      return;
+
+   case op_prop:
+      flatten_prop( ctxt, pol, fm. view_unary( ). sub( ), disj );
+      return;
+
+   }
+
+   std::cout << "flatten-disj " << pol << " :  " << fm. sel( ) << "\n";
+   throw std::logic_error( "operator not implemented" );
+}
+
+
+void
+calc::flatten_prop( std::vector< logic::vartype > & ctxt,
+                    polarity pol,
+                    const logic::term& fm,
+                    conjunction< forall< logic::term >> & conj )
+{
+   std::cout << "flatten-conj-prop " << pol << " :  " << fm << " " << "\n";
+
+   using namespace logic;
+
+   switch( fm. sel( ))
+   {
+
+   case op_not:
+      flatten_prop( ctxt, pol, fm. view_unary( ). sub( ), conj );
+      return;
+
+   case op_forall:
+   case op_exists:
+      {
+         if( pol == pol_neg )
+         {
+            conj. append( forall( ctxt, apply_prop( fm, pol )));
+            return;
+         }
+
+
+      }
+
+   }
+
+   std::cout << "flatten-conj-prop " << pol << " :  " << fm. sel( ) << "\n";
+   throw std::logic_error( "operator not implemented" );
+}
+
+
+void
+calc::flatten_prop( std::vector< logic::vartype > & ctxt,
+                    polarity pol,
+                    const logic::term& fm,
+                    disjunction< exists< logic::term >> & disj )
+{
+   std::cout << "flatten-disj-prop " << pol << " :  " << fm << " " << "\n";
+
+   using namespace logic;
+
+   switch( fm. sel( ))
+   {
+
+   case op_not:
+      flatten_prop( ctxt, pol, fm. view_unary( ). sub( ), disj );
+      return;
+
+   case op_and:
+   case op_or:
+   case op_implies:
+   case op_equiv:
+      {
+
+         auto bin = fm. view_binary( ); 
+         flatten_prop( ctxt, pol, bin. sub1( ), disj );
+         flatten_prop( ctxt, pol, bin. sub2( ), disj );
+         return;
+      }
+
+   case op_forall:
+   case op_exists:
+      {
+         size_t s = ctxt. size( ); 
+         appendvars( ctxt, fm );
+         flatten_prop( ctxt, pol, fm. view_quant( ). body( ), disj );
+         return;
+      }
+
+   case op_apply:
+      {
+         disj. append( exists( ctxt, apply_prop( fm, pol )));
+         return;
+      }
+
+   }
+
+   std::cout << "flatten-disj-prop " << pol << " :  " << fm. sel( ) << "\n";
+   throw std::logic_error( "operator not implemented" );
 }
 
 

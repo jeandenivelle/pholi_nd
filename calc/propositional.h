@@ -20,7 +20,7 @@ namespace calc
       void append( F f )
          { disj. push_back( std::move(f)); }
       
-      using iterator = std::vector<F>  :: iterator;
+      using iterator = std::vector<F> :: iterator;
       using const_iterator = std::vector<F> :: const_iterator;
 
       iterator begin( ) { return disj. begin( ); }
