@@ -2,7 +2,6 @@
 #include "alternating.h"
 #include "kleening.h"
 
-
 namespace
 {
 
@@ -40,6 +39,47 @@ namespace
 
 }
 
+
+logic::selector 
+calc::kleening( logic::selector sel, polarity pol )
+{
+   using namespace logic;
+
+   if( pol == pol_pos )
+   {
+      switch( sel )
+      {
+      case op_false:
+      case op_or:
+      case op_lazy_or:
+         return op_kleene_or;
+
+      case op_true:
+      case op_and:
+      case op_lazy_and:
+         return op_kleene_and;
+
+      }
+   }
+
+   if( pol == pol_neg )
+   {
+      switch( sel )
+      {
+      case op_false:
+      case op_or:
+      case op_lazy_or:
+         return op_kleene_and;
+         
+      case op_true:
+      case op_and:
+      case op_lazy_and:
+         return op_kleene_or;
+
+      }
+   }
+   throw std::logic_error( "Kleening: operator not implemented" );
+}
 
 calc::anf< logic::term >
 calc::flatten( anf< logic::term > conj )
@@ -80,6 +120,40 @@ calc::flatten( std::vector< logic::vartype > & ctxt,
 
    switch( fm. sel( ))
    {
+   case op_exact:
+   case op_debruijn:
+   case op_unchecked:
+      conj. append( forall( ctxt, apply( fm, pol ) ));
+      return;
+
+   case op_false:
+   case op_true:
+      if( kleening( fm. sel( ), pol ) == op_kleene_or )
+      {
+         conj. append( forall( ctxt, term( op_false )));
+         return;
+      }
+      else
+         return;
+
+   case op_error:
+      return;
+
+   case op_and:
+   case op_or:
+   case op_lazy_and:
+   case op_lazy_or:
+      {
+         if( kleening( fm. sel( ), pol ) == op_kleene_and )
+         {
+            auto bin = fm. view_binary( );
+            flatten( ctxt, pol, bin. sub1( ), conj );
+            flatten( ctxt, pol, bin. sub2( ), conj );
+         }
+         else
+            conj. append( forall( ctxt, apply( fm, pol ) ));
+         return;
+      }
 
    case op_not:
       flatten( ctxt, -pol, fm. view_unary( ). sub( ), conj );
@@ -134,6 +208,24 @@ calc::flatten( std::vector< logic::vartype > & ctxt,
 
    switch( fm. sel( ))
    {
+   case op_exact:
+   case op_debruijn:
+   case op_unchecked:
+      disj. append( exists( ctxt, apply( fm, pol ) ));
+      return;
+
+   case op_false:
+   case op_true:
+      if( kleening( fm. sel( ), pol ) == op_kleene_and )
+      {
+         disj. append( exists( ctxt, term( op_true )));
+         return;
+      }
+      else 
+         return;
+
+   case op_error:
+      return;
 
    case op_not:
       flatten( ctxt, -pol, fm. view_unary( ). sub( ), disj );
@@ -142,6 +234,22 @@ calc::flatten( std::vector< logic::vartype > & ctxt,
    case op_prop:
       flatten_prop( ctxt, pol, fm. view_unary( ). sub( ), disj );
       return;
+
+   case op_and:
+   case op_or:
+   case op_lazy_and:
+   case op_lazy_or:
+      {
+         if( kleening( fm. sel( ), pol ) == op_kleene_or )
+         {
+            auto bin = fm. view_binary( );
+            flatten( ctxt, pol, bin. sub1( ), disj );
+            flatten( ctxt, pol, bin. sub2( ), disj );
+         }
+         else
+            disj. append( exists( ctxt, apply( fm, pol ) ));
+         return;
+      }
 
    }
 

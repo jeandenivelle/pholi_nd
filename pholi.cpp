@@ -81,6 +81,9 @@ includefile( logic::beliefstate& blfs,
 
 int main( int argc, char* argv[] )
 {
+   tests::alternating( );
+   return 0;
+
    errorstack err;
  
    logic::beliefstate blfs;  

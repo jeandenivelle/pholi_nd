@@ -16,15 +16,10 @@ namespace calc
    template< typename F >
    using anf = conjunction< forall< disjunction< exists<F>>>> ;
 
+   logic::selector kleening( logic::selector sel, polarity pol );
+
+
    anf< logic::term > flatten( anf< logic::term > conj );
-
-
-
-   // Flatten only conj and forall:
-  
-   void flatten( anf< logic::term > & conj,
-                 std::vector< logic::vartype > & ctxt,
-                 const logic::term& fm );
 
 
    void

@@ -1,111 +1,6 @@
 
 #include "kleening.h"
 
-bool calc::canbe_pi( const logic::term& fm )
-{
-   std::cout << "canbepi: " << fm << "\n\n";
-
-   using namespace logic;
-   switch( fm. sel( ))
-   {
-
-   case op_not:
-      return canbe_sigma( fm. view_unary( ). sub( ));
-
-   case op_prop:
-      return canbe_pi_prop( fm. view_unary( ). sub( ));
-   }
-}
-
-
-bool calc::canbe_sigma( const logic::term& fm )
-{
-   std::cout << "canbesigma: " << fm << "\n\n";
-
-   using namespace logic;
-   switch( fm. sel( ))
-   {
-
-   case op_not:
-      return canbe_pi( fm. view_unary( ). sub( ));
-
-   case op_prop:
-      return canbe_sigma_prop( fm. view_unary( ). sub( ));
-
-
-   }
-
-   throw std::logic_error( "not implemented" );
-}
-
-
-bool calc::canbe_pi_prop( const logic::term& fm )
-{
-   std::cout << "canbe_pi(prop): " << fm << "\n\n";
-
-   using namespace logic;
-
-   if( fm. sel( ) == op_forall || fm. sel( ) == op_exists )
-   {
-      auto quant = fm. view_quant( );
-      if( quant. size( ) == 0 )
-         return canbe_sigma_prop( quant. body( ));
-
-      return true;
-   }
-
-   std::cout << fm << "\n";
-   throw std::logic_error( "canbe_pi_prop : unhandled case" );
-}
-
-
-bool calc::canbe_sigma_prop( const logic::term& fm )
-{
-   std::cout << "canbesigma(prop): " << fm << "\n\n";
-
-   using namespace logic;
-   if( fm. sel( ) == op_forall || fm. sel( ) == op_exists )
-   {
-      auto quant = fm. view_quant( ); 
-      if( quant. size( ) == 0 )
-         return canbe_sigma_prop( quant. body( ));
-
-      return false; 
-   }
-
-   std::cout << fm << "\n";
-   throw std::logic_error( "canbe_sigma_prop : unhandled case" );
-}
-
-
-logic::selector calc::kleenop( logic::selector op )
-{
-   using namespace logic;
-
-   switch( op )
-   {
-   case op_false:
-      return op_kleene_or;
-   case op_true:
-      return op_kleene_and;
-   case op_and:
-   case op_lazy_and:
-      return op_kleene_and;
-   case op_or:
-   case op_lazy_or:
-      return op_kleene_or;
-   case op_forall:
-   case op_kleene_forall:
-      return op_kleene_forall;
-   case op_exists:
-   case op_kleene_exists:
-      return op_kleene_exists;
-   }
-
-   std::cout << "kleenop not implemented for " << op << "\n";
-   throw std::runtime_error( "kleenop not implemented" );
-}
-
 
 logic::term calc::apply( const logic::term& f, polarity pol )
 {
@@ -139,6 +34,7 @@ logic::term calc::apply_prop( const logic::term& f, polarity pol )
    throw std::logic_error( "cannot apply unknown polarity" );
 }
 
+#if 0
 logic::term calc::kleene_top( const logic::term& f, polarity pol )
 {
    if constexpr( false )
@@ -236,8 +132,9 @@ logic::term calc::kleene_top( const logic::term& f, polarity pol )
    std::cout << "kleene top " << pol << " : " << f. sel( ) << "\n";
    throw std::logic_error( "operator not implemented" );
 }
+#endif
 
-
+#if 0
 logic::term calc::kleene_top_prop( const logic::term& f, polarity pol )
 {
    if constexpr( false )
@@ -332,5 +229,6 @@ logic::term calc::kleene_top_prop( const logic::term& f, polarity pol )
    std::cout << "kleene top prop " << pol << " : " << f. sel( ) << "\n";
    throw std::logic_error( "operator not implemented" );
 }
+#endif
 
 

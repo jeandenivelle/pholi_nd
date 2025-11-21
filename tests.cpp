@@ -9,7 +9,6 @@
 
 #include "calc/proofterm.h"
 #include "calc/proofchecking.h"
-#include "calc/kleening.h"
 #include "calc/alternating.h"
 #include "calc/removelets.h"
 #include "calc/expander.h"
@@ -146,9 +145,8 @@ void tests::add_settheory( logic::beliefstate& blfs )
 }
 
 
-void tests::clausify( logic::beliefstate& blfs, errorstack& err )
+void tests::alternating( )
 {
-#if 0
    std::cout << "testing clausify\n";
 
    using namespace logic;
@@ -160,6 +158,21 @@ void tests::clausify( logic::beliefstate& blfs, errorstack& err )
    type Seq = type( type_unchecked, identifier( ) + "Seq" );
    type X = type( type_unchecked, identifier( ) + "X" );
 
+   auto fm = term( op_lazy_and, 0_db, 1_db );
+
+   calc::conjunction< calc::forall< term >> conj;
+   calc::disjunction< calc::exists< term >> disj;
+
+   std::vector< vartype > ctxt;
+   ctxt. push_back( { "y", O } );
+   calc::polarity pol = calc::pol_neg;
+   flatten( ctxt, pol, fm, conj );
+   flatten( ctxt, pol, fm, disj );
+
+   std::cout << "conj = " << conj << "\n";
+   std::cout << "disj = " << disj << "\n";
+ 
+#if 0
    if constexpr( false )
    {
       auto all1 =
@@ -183,14 +196,6 @@ void tests::clausify( logic::beliefstate& blfs, errorstack& err )
       std::cout << "the formula is " << form << "\n";
 
       form = calc::alternating( form, logic::op_kleene_or, 2 );
-
-      {
-         context ctxt; 
-         std::cout << "result = ";
-         std::cout << form << "\n";
-
-         // pretty::print( std::cout, blfs, ctxt, form );
-      }
    }
 
    if constexpr( false ) 
