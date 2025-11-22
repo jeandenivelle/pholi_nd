@@ -31,13 +31,49 @@ namespace
 
 
    void
-   restore( std::vector< logic::vartype > & ctxt, size_t s )
+   restore( std::vector< logic::vartype > & ctxt, size_t ss )
    {
-
-
+      while( ctxt. size( ) > ss )
+         ctxt. pop_back( ); 
    }
 
 }
+
+
+logic::term calc::apply( const logic::term& f, polarity pol )
+{
+   switch( pol )
+   {
+   case pol_pos:
+      return f;
+   case pol_neg:
+      if( f. sel( ) == logic::op_not )
+         return f. view_unary( ). sub( );
+      else
+         return logic::term( logic::op_not, f );
+   }
+   std::cout << pol << "\n";
+   throw std::logic_error( "cannot apply unknown polarity" );
+}
+
+
+
+logic::term calc::apply_prop( const logic::term& f, polarity pol )
+{
+   if( f. sel( ) == logic::op_not )
+      return apply_prop( f. view_unary( ). sub( ), pol );
+
+   switch( pol )
+   {
+   case pol_pos:
+      return logic::term( logic::op_prop, f );
+   case pol_neg:
+      return logic::term( logic::op_not, logic::term( logic::op_prop, f ));
+   }
+   std::cout << pol << "\n";
+   throw std::logic_error( "cannot apply unknown polarity" );
+}
+
 
 
 logic::selector 
@@ -59,6 +95,10 @@ calc::kleening( logic::selector sel, polarity pol )
       case op_lazy_and:
          return op_kleene_and;
 
+      case op_forall:
+         return op_kleene_forall;
+      case op_exists:
+         return op_kleene_exists;
       }
    }
 
@@ -76,6 +116,10 @@ calc::kleening( logic::selector sel, polarity pol )
       case op_lazy_and:
          return op_kleene_or;
 
+      case op_forall:
+         return op_kleene_exists;
+      case op_exists:
+         return op_kleene_forall;
       }
    }
    throw std::logic_error( "Kleening: operator not implemented" );
@@ -123,6 +167,10 @@ calc::flatten( std::vector< logic::vartype > & ctxt,
    case op_exact:
    case op_debruijn:
    case op_unchecked:
+   case op_equals:
+   case op_let:
+   case op_apply:
+   case op_lambda:
       conj. append( forall( ctxt, apply( fm, pol ) ));
       return;
 
@@ -137,6 +185,14 @@ calc::flatten( std::vector< logic::vartype > & ctxt,
          return;
 
    case op_error:
+      return;
+
+   case op_not:
+      flatten( ctxt, -pol, fm. view_unary( ). sub( ), conj );
+      return;
+
+   case op_prop:
+      flatten_prop( ctxt, pol, fm. view_unary( ). sub( ), conj );
       return;
 
    case op_and:
@@ -155,40 +211,58 @@ calc::flatten( std::vector< logic::vartype > & ctxt,
          return;
       }
 
-   case op_not:
-      flatten( ctxt, -pol, fm. view_unary( ). sub( ), conj );
-      return;
+   case op_implies:
+   case op_lazy_implies:
+      {
+         if( pol == pol_pos )
+            conj. append( forall( ctxt, fm ));
+         else
+         {
+            auto bin = fm. view_binary( );
+            flatten( ctxt, pol_pos, bin. sub1( ), conj );
+            flatten( ctxt, pol_neg, bin. sub2( ), conj );
+         }
+         return;
+      }
 
-   case op_prop:
-      flatten_prop( ctxt, pol, fm. view_unary( ). sub( ), conj );
-      return;
+   case op_equiv:
+      {
+         auto bin = fm. view_binary( ); 
+         if( pol == pol_pos )
+         {
+            auto impl1 = logic::term( op_implies, bin. sub1( ), bin. sub2( ));
+            auto impl2 = logic::term( op_implies, bin. sub2( ), bin. sub1( ));
+            conj. append( forall( ctxt, impl1 ));
+            conj. append( forall( ctxt, impl2 ));
+         }
+         else
+         {
+            auto disj1 = logic::term( op_or, 
+                            apply( bin. sub1( ), pol_neg ),
+                            apply( bin. sub2( ), pol_neg ));
 
+            auto disj2 = logic::term( op_or, bin. sub1( ), bin. sub2( ));
+            conj. append( forall( ctxt, disj1 )); 
+            conj. append( forall( ctxt, disj2 ));
+         }
+         return;
+      }
 
-#if 0
-   if( kln. sel( ) == logic::op_exists &&
-       kln. view_quant( ). size( ) == 1 )
-   {
-      flatten( conj, ctxt, kln. view_quant( ). body( ));
-      return; 
-   }
-
-   if( kln. sel( ) == logic::op_kleene_or &&
-       kln. view_kleene( ). size( ) == 1 )
-   {
-      flatten( conj, ctxt, kln. view_kleene( ). sub(0));
-      return;
-   }
-
-   if( kln. sel( ) == logic:: op_kleene_and )
-      throw std::logic_error( "kleene_and" );
-
-   if( kln. sel( ) == logic::op_kleene_forall )
-      throw std::logic_error( "kleene_forall" );
-
-   auto ex = disjunction( { exists( fm ) } );
-  
-   conj. append( forall( ctxt, std::move( ex )));
-#endif
+   case op_forall:
+   case op_exists:
+      {
+         if( kleening( fm. sel( ), pol ) == op_kleene_forall ) 
+         {
+            auto ss = ctxt. size( );
+            appendvars( ctxt, fm );
+            flatten( ctxt, pol, fm. view_quant( ). body( ), conj );
+            restore( ctxt, ss );
+         }
+         else
+            conj. append( forall( ctxt, apply( fm, pol )));
+         return;
+      }
+ 
    }
 
    std::cout << "flatten-conj " << pol << " :  " << fm. sel( ) << "\n";
@@ -211,6 +285,10 @@ calc::flatten( std::vector< logic::vartype > & ctxt,
    case op_exact:
    case op_debruijn:
    case op_unchecked:
+   case op_equals:
+   case op_let:
+   case op_apply:
+   case op_lambda:
       disj. append( exists( ctxt, apply( fm, pol ) ));
       return;
 
@@ -251,6 +329,60 @@ calc::flatten( std::vector< logic::vartype > & ctxt,
          return;
       }
 
+   case op_implies:
+   case op_lazy_implies:
+      {
+         if( pol == pol_pos )
+         {
+            auto bin = fm. view_binary( );
+            flatten( ctxt, pol_neg, bin. sub1( ), disj );
+            flatten( ctxt, pol_pos, bin. sub2( ), disj );
+         }
+         else
+            disj. append( exists( ctxt, apply( fm, pol ) ));
+         return;
+      }
+
+   case op_equiv:
+      {
+         auto bin = fm. view_binary( );
+         if( pol == pol_pos )
+         {
+            auto conj1 = logic::term( op_and, bin. sub1( ), bin. sub2( ));
+            auto conj2 = logic::term( op_and,
+                            apply( bin. sub1( ), pol_neg ),
+                            apply( bin. sub2( ), pol_neg ));
+
+            disj. append( exists( ctxt, conj1 ));
+            disj. append( exists( ctxt, conj2 ));
+         }
+         else
+         {
+            auto conj1 = logic::term( op_and, bin. sub1( ), 
+                                      apply( bin. sub2( ), pol_neg ));
+            auto conj2 = logic::term( op_and, bin. sub2( ), 
+                                      apply( bin. sub1( ), pol_neg ));
+            disj. append( exists( ctxt, conj1 ));
+            disj. append( exists( ctxt, conj2 ));
+         }
+
+         return;
+      }
+
+   case op_forall:
+   case op_exists:
+      if( kleening( fm. sel( ), pol ) == op_kleene_exists )
+      {
+         auto ss = ctxt. size( );
+         appendvars( ctxt, fm );
+         flatten( ctxt, pol, fm. view_quant( ). body( ), disj );
+         restore( ctxt, ss );
+      }
+      else
+         disj. append( exists( ctxt, apply( fm, pol )));
+      return;
+
+
    }
 
    std::cout << "flatten-disj " << pol << " :  " << fm. sel( ) << "\n";
@@ -260,8 +392,7 @@ calc::flatten( std::vector< logic::vartype > & ctxt,
 
 void
 calc::flatten_prop( std::vector< logic::vartype > & ctxt,
-                    polarity pol,
-                    const logic::term& fm,
+                    polarity pol, const logic::term& fm,
                     conjunction< forall< logic::term >> & conj )
 {
    std::cout << "flatten-conj-prop " << pol << " :  " << fm << " " << "\n";
@@ -270,23 +401,45 @@ calc::flatten_prop( std::vector< logic::vartype > & ctxt,
 
    switch( fm. sel( ))
    {
+   case op_exact:
+   case op_debruijn:
+   case op_unchecked:
+   case op_let:
+   case op_apply:
+   case op_lambda:
+      conj. append( forall( ctxt, apply_prop( fm, pol ) ));
+      return;
 
    case op_not:
       flatten_prop( ctxt, pol, fm. view_unary( ). sub( ), conj );
       return;
 
+   case op_and:
+   case op_or:
+   case op_implies:
+   case op_equiv:
+      if( pol == pol_pos )
+      {
+         auto bin = fm. view_binary( );
+         flatten_prop( ctxt, pol, bin. sub1( ), conj );
+         flatten_prop( ctxt, pol, bin. sub2( ), conj );
+      }
+      else
+         conj. append( forall( ctxt, apply_prop( fm, pol ) ));
+      return;
+ 
    case op_forall:
    case op_exists:
+      if( pol == pol_pos )
       {
-         if( pol == pol_neg )
-         {
-            conj. append( forall( ctxt, apply_prop( fm, pol )));
-            return;
-         }
-
-
+         auto ss = ctxt. size( );
+         appendvars( ctxt, fm );
+         flatten_prop( ctxt, pol, fm. view_quant( ). body( ), conj );
+         restore( ctxt, ss );
       }
-
+      else
+         conj. append( forall( ctxt, apply_prop( fm, pol_neg )));
+      return;
    }
 
    std::cout << "flatten-conj-prop " << pol << " :  " << fm. sel( ) << "\n";
@@ -296,8 +449,7 @@ calc::flatten_prop( std::vector< logic::vartype > & ctxt,
 
 void
 calc::flatten_prop( std::vector< logic::vartype > & ctxt,
-                    polarity pol,
-                    const logic::term& fm,
+                    polarity pol, const logic::term& fm,
                     disjunction< exists< logic::term >> & disj )
 {
    std::cout << "flatten-disj-prop " << pol << " :  " << fm << " " << "\n";
@@ -306,6 +458,14 @@ calc::flatten_prop( std::vector< logic::vartype > & ctxt,
 
    switch( fm. sel( ))
    {
+   case op_exact:
+   case op_debruijn:
+   case op_unchecked:
+   case op_let:
+   case op_apply:
+   case op_lambda:
+      disj. append( exists( ctxt, apply_prop( fm, pol ) ));
+      return;
 
    case op_not:
       flatten_prop( ctxt, pol, fm. view_unary( ). sub( ), disj );
@@ -315,26 +475,28 @@ calc::flatten_prop( std::vector< logic::vartype > & ctxt,
    case op_or:
    case op_implies:
    case op_equiv:
+      if( pol == pol_pos )
+         disj. append( exists( ctxt, apply_prop( fm, pol ) ));
+      else 
       {
-
          auto bin = fm. view_binary( ); 
          flatten_prop( ctxt, pol, bin. sub1( ), disj );
          flatten_prop( ctxt, pol, bin. sub2( ), disj );
-         return;
       }
+      return;
 
    case op_forall:
    case op_exists:
       {
-         size_t s = ctxt. size( ); 
-         appendvars( ctxt, fm );
-         flatten_prop( ctxt, pol, fm. view_quant( ). body( ), disj );
-         return;
-      }
-
-   case op_apply:
-      {
-         disj. append( exists( ctxt, apply_prop( fm, pol )));
+         if( pol == pol_pos )
+            disj. append( exists( ctxt, apply_prop( fm, pol ) ));
+         else
+         {
+            size_t ss = ctxt. size( ); 
+            appendvars( ctxt, fm );
+            flatten_prop( ctxt, pol, fm. view_quant( ). body( ), disj );
+            restore( ctxt, ss );
+         }
          return;
       }
 
@@ -370,44 +532,6 @@ calc::alternating( const logic::term& f, logic::selector op,
 
 #endif
 
-#if 0
-
-void 
-calc::flatten( logic::context& ctxt, const logic::term& frm, 
-               logic::selector op, unsigned int rank,
-               std::vector< logic::term > & into )
-{
-   if constexpr( false )
-   {
-      std::cout << "flatten " << op << "/" << rank << " : ";
-      std::cout << frm << "\n\n";
-   }
-
-   auto kln = kleene_top( frm, pol_pos );
-
-   if( kln. sel( ) == op )
-   {
-      auto nary = kln. view_kleene( );
-      for( size_t i = 0; i != nary. size( ); ++ i )
-         flatten( ctxt, nary. sub(i), op, rank, into );
-      return;
-   }
-
-   if( kln. sel( ) == quantof( op ))
-   {
-      auto ex = kln. view_quant( );
-      size_t csize = ctxt. size( );
-      for( size_t i = 0; i != ex. size( ); ++ i )
-         ctxt. append( ex. var(i). pref, ex. var(i). tp );  
-      flatten( ctxt, ex. body( ), op, rank, into );
-      ctxt. restore( csize );  
-      return; 
-   }
-
-   into. push_back( quantify( quantof( op ), ctxt,
-                    alternating( frm, alternation( op ), rank - 1 )));
-}
-#endif
 
 #if 0
 

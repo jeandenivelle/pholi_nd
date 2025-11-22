@@ -2,37 +2,6 @@
 #include "kleening.h"
 
 
-logic::term calc::apply( const logic::term& f, polarity pol )
-{
-   switch( pol )
-   {
-   case pol_pos: 
-      return f;
-   case pol_neg: 
-      if( f. sel( ) == logic::op_not )
-         return f. view_unary( ). sub( );
-      else
-         return logic::term( logic::op_not, f );
-   }
-   std::cout << pol << "\n";
-   throw std::logic_error( "cannot apply unknown polarity" ); 
-}
-
-logic::term calc::apply_prop( const logic::term& f, polarity pol )
-{
-   if( f. sel( ) == logic::op_not )
-      return apply_prop( f. view_unary( ). sub( ), pol );
-
-   switch( pol )
-   {
-   case pol_pos:
-      return logic::term( logic::op_prop, f ); 
-   case pol_neg:
-      return logic::term( logic::op_not, logic::term( logic::op_prop, f ));
-   }
-   std::cout << pol << "\n";
-   throw std::logic_error( "cannot apply unknown polarity" );
-}
 
 #if 0
 logic::term calc::kleene_top( const logic::term& f, polarity pol )

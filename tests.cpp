@@ -158,16 +158,18 @@ void tests::alternating( )
    type Seq = type( type_unchecked, identifier( ) + "Seq" );
    type X = type( type_unchecked, identifier( ) + "X" );
 
-   auto fm = term( op_lazy_and, 0_db, 1_db );
-
+   auto fm = 0_db;
+   fm = forall( {{ "aa", T }, { "bb", O2T }}, fm );
+   fm = term( op_equiv, fm, "hans"_unchecked );
+ 
    calc::conjunction< calc::forall< term >> conj;
    calc::disjunction< calc::exists< term >> disj;
 
    std::vector< vartype > ctxt;
    ctxt. push_back( { "y", O } );
-   calc::polarity pol = calc::pol_neg;
-   flatten( ctxt, pol, fm, conj );
-   flatten( ctxt, pol, fm, disj );
+   calc::polarity pol = calc::pol_neg; 
+   flatten_prop( ctxt, pol, fm, conj );
+   flatten_prop( ctxt, pol, fm, disj );
 
    std::cout << "conj = " << conj << "\n";
    std::cout << "disj = " << disj << "\n";
