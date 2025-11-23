@@ -1,6 +1,5 @@
 
 #include "alternating.h"
-#include "kleening.h"
 
 namespace
 {
@@ -410,6 +409,19 @@ calc::flatten_prop( std::vector< logic::vartype > & ctxt,
       conj. append( forall( ctxt, apply_prop( fm, pol ) ));
       return;
 
+   case op_false:
+   case op_true:
+   case op_prop:
+   case op_equals:
+      if( pol == pol_neg )
+         conj. append( forall( ctxt, logic::term( logic::op_false )));
+      return;    
+
+   case op_error:
+      if( pol == pol_pos )
+         conj. append( forall( ctxt, logic::term( logic::op_false )));
+      return;
+ 
    case op_not:
       flatten_prop( ctxt, pol, fm. view_unary( ). sub( ), conj );
       return;
@@ -427,7 +439,26 @@ calc::flatten_prop( std::vector< logic::vartype > & ctxt,
       else
          conj. append( forall( ctxt, apply_prop( fm, pol ) ));
       return;
- 
+
+   case op_lazy_and:
+   case op_lazy_or:
+   case op_lazy_implies:
+      if( pol == pol_pos )
+      {
+         auto bin = fm. view_binary( );
+         flatten_prop( ctxt, pol, bin. sub1( ), conj );
+         auto op = op_implies;
+         if( fm. sel( ) == op_lazy_or )
+            op = op_or;
+
+         conj. append( forall( ctxt, term( op, bin. sub1( ), 
+                                     term( op_prop, bin. sub2( ) )) ));
+      } 
+      else
+         conj. append( forall( ctxt, apply_prop( fm, pol ) ));
+            // Can think of nothing better.
+      return;
+
    case op_forall:
    case op_exists:
       if( pol == pol_pos )
@@ -467,6 +498,19 @@ calc::flatten_prop( std::vector< logic::vartype > & ctxt,
       disj. append( exists( ctxt, apply_prop( fm, pol ) ));
       return;
 
+   case op_false:
+   case op_true:
+   case op_prop:
+   case op_equals:
+      if( pol == pol_pos )
+         disj. append( exists( ctxt, logic::term( logic::op_true )));
+      return;
+
+   case op_error:
+      if( pol == pol_neg )
+         disj. append( exists( ctxt, logic::term( logic::op_true )));
+      return;
+
    case op_not:
       flatten_prop( ctxt, pol, fm. view_unary( ). sub( ), disj );
       return;
@@ -482,6 +526,25 @@ calc::flatten_prop( std::vector< logic::vartype > & ctxt,
          auto bin = fm. view_binary( ); 
          flatten_prop( ctxt, pol, bin. sub1( ), disj );
          flatten_prop( ctxt, pol, bin. sub2( ), disj );
+      }
+      return;
+
+   case op_lazy_and:
+   case op_lazy_or:
+   case op_lazy_implies:
+      if( pol == pol_pos )
+         disj. append( exists( ctxt, apply_prop( fm, pol ) ));
+      else
+      {
+         auto bin = fm. view_binary( );
+         flatten_prop( ctxt, pol, bin. sub1( ), disj );
+         pol = pol_pos;
+         if( fm. sel( ) == op_lazy_or )
+            pol = pol_neg; 
+
+         disj. append( exists( ctxt, 
+            term( op_and, apply( bin. sub1( ), pol ),
+                          apply_prop( bin. sub2( ), pol_neg )) ));
       }
       return;
 
@@ -534,34 +597,6 @@ calc::alternating( const logic::term& f, logic::selector op,
 
 
 #if 0
-
-size_t
-calc::alternation_rank( const logic::term& f )
-{
-   size_t rank = 0;
-
-   if( f. sel( ) == logic::op_kleene_or )
-   {
-      auto kl = f. view_kleene( );
-      for( size_t i = 0; i != kl. size( ); ++ i )
-      {
-         const auto* p = &kl. sub(i);
-
-         // If it is a Kleene exists, we replace p by the body:
-
-         if( p -> sel( ) == logic::op_kleene_exists )
-            p = &( p -> view_quant( ). body( ));
-
-         if( p -> sel( ) == logic::op_kleene_and )
-         {
-            size_t rk = alternation_rank( *p );
-            if( rk > rank )
-               rank = rk; 
-         }
-      }
-      return rank + 1;
-   }
-
 #if 0
    if( isliteral(f))
       return 0;
@@ -657,7 +692,12 @@ calc::restrict_alternation( transformer& trans, logic::beliefstate& blfs,
          }
          return f;
       }
-  
+
+   case op_lazy_and:
+   case op_lazy_or:
+   case op_lazy_implies:
+      return;
+ 
    case logic::op_kleene_forall:
    case logic::op_kleene_exists:
       {

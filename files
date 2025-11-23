@@ -42,7 +42,6 @@
    polarity.cpp
    util.cpp
    removelets.cpp
-   kleening.cpp
    alternating.cpp
    expander.cpp
    localexpander.cpp
