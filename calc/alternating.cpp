@@ -150,7 +150,7 @@ calc::flatten( anf< logic::term > conj )
    for( auto& all : conj )
    {
       all. body = flatten( std::move( all. body ));
-         // This is flatten for disjunction. It is not a recursion!
+         // This is flatten for disjunction. There is no recursion!
 
       if( all. body. size( ) == 1 && all. body. at(0). nrvars( ) == 0 )
       {
@@ -161,21 +161,19 @@ calc::flatten( anf< logic::term > conj )
          extract( vars, pol_pos, all. body. at(0). body, cls );
 
          if( vars. size( ) != ss )
-            throw std::logic_error( "flatten: context not restored" );
+            throw std::logic_error( "flatten: context not properly restored" );
 
-         std::cout << cls << "\n";
+         std::cout << "tried forall:\n";
+         std::cout << cls << "\n\n";
 
-         for( auto& a : cls )
+         for( auto& aa : cls )
          {
             dnf< logic::term > disj;
-            disj. append( exists( std::move( a. body )) );
-            std::cout << disj << "\n";
+            disj. append( exists( std::move( aa. body )) );
 
             result. append( forall( 
-               std::move( a. vars ), flatten( std::move( disj ))));
+               std::move( aa. vars ), flatten( std::move( disj ))));
          }
-
-         throw std::logic_error( "it happened" );
       }
       else
          result. append( std::move( all ));
@@ -192,7 +190,7 @@ calc::extract( std::vector< logic::vartype > & ctxt,
                const logic::term& fm,
                conjunction< forall< logic::term >> & conj )
 {
-   std::cout << "extract-conj " << pol << " :  " << fm << " " << "\n";
+   // std::cout << "extract-conj " << pol << " :  " << fm << " " << "\n";
 
    using namespace logic;
 

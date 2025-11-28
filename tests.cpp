@@ -164,7 +164,8 @@ void tests::alternating( )
 
    calc::dnf< logic::term > res;
    res. append( calc::exists( { }, forall( {{ "xx", T }, { "yy", O }},
-                                      ( "aa"_unchecked || "bb"_unchecked )) &&
+                                      ( "aa"_unchecked || 
+                                        exists( {{"C", T }}, "bb1"_unchecked || "bb2"_unchecked ))) &&
                                     ( "xx"_unchecked || "yy"_unchecked  ))); 
 
    calc::anf< logic::term > anf;
