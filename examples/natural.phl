@@ -52,6 +52,7 @@ thm just : [ s1,s2: Nat ] [ x1,x2: Obj ]
 
 thm resolve : 
    [ P,Q,R : Form( Obj ) ] 
+      { [ x : Obj ] #P(x) & #Q(x) & #R(x) } ->
       ( [ x : Obj ] P(x) | Q(x) ) &
       ( [ y : Obj ] !P(y) | R(y) ) ->
       ( [ z : Obj ] Q(z) | R(z) ); 

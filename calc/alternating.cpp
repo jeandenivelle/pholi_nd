@@ -152,7 +152,7 @@ calc::flatten( anf< logic::term > conj )
       all. body = flatten( std::move( all. body ));
          // This is flatten for disjunction. There is no recursion!
 
-      if( all. body. size( ) == 1 && all. body. at(0). nrvars( ) == 0 )
+      if( all. body. size( ) == 1 && all. body. at(0). vars. size( ) == 0 )
       {
          auto vars = std::move( all. vars ); 
          auto ss = vars. size( );

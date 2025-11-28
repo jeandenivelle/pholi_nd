@@ -394,7 +394,14 @@ void tests::smallproofs( const logic::beliefstate& blfs, errorstack& err )
       seq. ugly( std::cout );
 
       auto split = proofterm( prf_orexistselim,
-         { proofterm( prf_chain, { proofterm( prf_expandlocal, "goal", 0 ) } ),
+         { proofterm( prf_chain, 
+              { proofterm( prf_expandlocal, "goal", 0 ),
+                proofterm( prf_flatten ),
+                proofterm( prf_orexistselim,
+                   { proofterm( prf_chain, { prf_flatten,
+                        proofterm( prf_orexistselim, { } ) }
+                     ) } )  
+              } ),
            proofterm( prf_chain, { prf_nop } ) } );
  
       auto prf = proofterm( prf_propcut, "goal"_unchecked );

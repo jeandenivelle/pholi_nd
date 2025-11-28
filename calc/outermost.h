@@ -19,7 +19,6 @@ namespace calc
       if( fm. has_value( ))
          fm. value( ) = logic::outermost( r, std::move( fm. value( )), 0 ); 
    }
-
 #endif
 
    template< logic::replacement R, typename F > 
@@ -27,7 +26,7 @@ namespace calc
    outermost( R& repl, exists<F> ex, size_t vardepth )
    {
       ex. body = outermost( repl, std::move( ex. body ),
-                            vardepth + ex. nrvars( )); 
+                            vardepth + ex. vars. size( )); 
       return ex;
    }
 
@@ -43,7 +42,7 @@ namespace calc
    forall<F> outermost( R& repl, forall<F> all, size_t vardepth )
    {
       all. body = outermost( repl, std::move( all. body ), 
-                             vardepth + all. nrvars( ));
+                             vardepth + all. vars. size( ));
       return all;
    }
  

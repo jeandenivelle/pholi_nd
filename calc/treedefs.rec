@@ -11,7 +11,7 @@
 %option chain { prf_chain } => [ step : proofterm ] 
 %option nop { prf_nop } => 
 
-%option clausify { prf_clausify } => 
+%option flatten { prf_flatten } => 
 
 %option name { prf_name } => name : std::string
 %option call { prf_call } => nr : size_t, name : std::string
@@ -67,10 +67,6 @@
 //         out << ind << "ident " << view_ident( ). ident( ) << "\n"; 
 //         return; 
 
-      case prf_clausify:
-         out << ind << "clausify\n";
-         return; 
-
       case prf_propcut:
          out << ind << "propcut: " << view_propcut( ). fm( ) << "\n";
          return;
@@ -95,10 +91,12 @@
          }
 
       case prf_nop:
-         {
-            out << ind << "nop\n";
-            return;
-         } 
+         out << ind << "nop\n";
+         return;
+
+      case prf_flatten:
+         out << ind << "flatten\n";
+         return; 
 
       case prf_orexistselim:
          {

@@ -15,6 +15,9 @@
 #include "printing.h"
 
 
+void 
+calc::normalize( forall< disjunction< exists< logic::term >>> & cls );
+
 // This is a very bad case of bloated implementation, 
 // which should be looked at from the programming language point of view. 
 
@@ -116,19 +119,23 @@ calc::checkproof( const logic::beliefstate& blfs,
 
          return seq. getformula( f. front( ), err );
       }
-
-   case prf_clausify:
-      {
-         auto cl = prf. view_clausify( ); 
-         auto fm = checkproof( cl. parent( ), seq, err );
-         if( !fm. has_value( ))
-            return { };
-
-         auto res = optform( std::move( fm ), "clausify", seq, err );
-         res. make_anf2( );
-         return res. value( );
-      }
 #endif
+
+   case prf_flatten: 
+      {
+         auto fm = std::move( seq. get(0));
+         std::cout << "flattening " << fm << "\n";
+
+         anf< logic::term > conj;
+         conj. append( std::move(fm));
+         conj = flatten( std::move( conj ));
+
+         std::cout << conj << "\n\n";
+         for( auto& c : conj )
+            seq. push( std::move(c) );
+
+         return;
+      }
 
    case prf_orexistselim:
       {
@@ -140,33 +147,34 @@ calc::checkproof( const logic::beliefstate& blfs,
  
          seq. pop( );
 
-         std::cout << "mainform = " << mainform << "\n";
+         std::cout << "mainform = " << mainform << "\n\n";
          if( mainform. vars. size( ))
          {
             throw std::runtime_error( "there are universal variables" );
-
          }
 
-         const disjunction< exists< logic::term >> disj = 
-            std::move( mainform. body );
+         const dnf< logic::term > disj = std::move( mainform. body );
+            // A disjunction of existentials:
 
          size_t nrvars = seq. nrvars( );
          size_t nrlevels = seq. nrlevels( );
 
-         for( size_t i = 0; i != disj. size( ); ++ i )
+         if( disj. size( ) < elim. size( ))
+            std::cout << "CRASH IS IMMINENT\n";
+
+         for( size_t i = 0; i != elim. size( ); ++ i )
          {
             const auto& sub = disj. at(i);
             std::cout << "sub = " << sub << "\n"; 
  
             // Assume the existential variables:
  
-            for( size_t i = 0; i != disj. at(i). nrvars( ); ++ i )
-            {
-               seq. assume( sub. vars[i]. pref, sub. vars[i]. tp );
-            }
+            for( size_t v = 0; v != sub. vars. size( ); ++ v )
+               seq. assume( sub. vars[v]. pref, sub. vars[v]. tp );
 
             // Create a new assumption level:
 
+            std::cout << "adding the level\n\n\n";
             seq. addlevel( );
 
             seq. push( forall( disjunction{ exists( sub. body ) } ));
@@ -178,6 +186,10 @@ calc::checkproof( const logic::beliefstate& blfs,
             std::cout << "============================\n";
             seq. ugly( std::cout );  
             std::cout << "\n";
+
+            if( disj. size( ) > elim. size( ))
+               std::cout << "REST MUST BE COPIED\n";
+
 #if 0
          bool success = true;
 
@@ -253,8 +265,11 @@ calc::checkproof( const logic::beliefstate& blfs,
             checkproof( blfs, step, seq, err );
             ch. update_step( i, std::move( step ));
          } 
-         std::cout << "crashing:\n"; 
+         std::cout << "chain is crashing:\n\n"; 
          seq. ugly( std::cout );
+
+         // A chain becomes equal to its last formula.
+
          throw std::runtime_error( "still no clue what to do of course" );
       }
 #if 0
@@ -311,17 +326,12 @@ calc::checkproof( const logic::beliefstate& blfs,
 
          auto exp = localexpander( seq. nrvars( ) - ind - 1,  def -> second, 
                                    prf. view_expandlocal( ). occ( ));
+
          auto fm = std::move( seq. get(0));
          seq. pop( );
-         fm = outermost( exp, std::move(fm), 0 );
-         std::cout << "fm after local expansion: " << fm << "\n\n"; 
-         anf< logic::term > conj;
-         conj. append(fm);
-         conj = flatten( conj );
-         std::cout << conj << "\n";
 
-         throw std::logic_error( "after flattening" );
-         seq. push( std::move(fm)); 
+         fm = outermost( exp, std::move(fm), 0 );
+         seq. push( std::move(fm));
          return;
       }
 #if 0

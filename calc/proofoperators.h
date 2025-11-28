@@ -29,9 +29,6 @@ namespace calc
    inline proofterm simplify( const proofterm& prf )
       { return proofterm( prf_simplify, prf ); }
 
-   inline proofterm clausify( const proofterm& prf )
-      { return proofterm( prf_clausify, prf ); }
-
    inline proofterm 
    expand( const std::string& label, size_t nr, const proofterm& prf )
       { return proofterm( prf_expand, identifier( ) + label, nr, prf ); }

@@ -27,8 +27,6 @@ namespace calc
            body( std::move( body ))
       { }
 
-      size_t nrvars( ) const { return vars. size( ); }
-
       void print( std::ostream& out ) const
       {
          out << "forall(";
@@ -60,8 +58,6 @@ namespace calc
          : vars( std::move( vars )),
            body( std::move( body ))
       { }
-
-      size_t nrvars( ) const { return vars. size( ); }
 
       void print( std::ostream& out ) const
       {

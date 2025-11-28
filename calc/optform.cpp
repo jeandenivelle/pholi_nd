@@ -119,18 +119,6 @@ void calc::optform::nrvarsmustbe( size_t i )
    }
 }
 
-void calc::optform::make_anf2( )
-{
-   if( !fm. has_value( ))
-      return;
-
-   logic::context ctxt;
-   fm. value( ) = removelets( seq, ctxt, fm. value( ));
-   if( ctxt. size( ))
-      throw std::logic_error( "context not empty" );
-
-   // fm. value( ) = alternating( fm. value( ), logic::op_kleene_and, 2 );
-}
 
 #if 0
 void calc::optform::normalize( )
@@ -149,51 +137,6 @@ void calc::optform::normalize( )
    while( beta. counter );
 }
 #endif
-
-void calc::optform::quantify( const std::vector< logic::vartype > & vars )
-{
-   if( !fm. has_value( ))
-      return;
-   if( !vars. size( ))
-      return; 
-
-   if( !fm. value( ). option_is_kleene( ))
-      throw std::logic_error( "quantify: Not a Kleene operator" );
-
-   using namespace logic;
-
-   auto kl = fm. value( ). view_kleene( );
-   for( size_t i = 0; i != kl. size( ); ++ i )
-   {
-      auto repl = term( op_error );
-         // kl. sub(i) will be replaced by repl at the end
-         // of this block.
-
-      if( fm. value( ). sel( ) == op_kleene_and )
-         repl = term( op_kleene_forall, repl, vars. begin( ), vars. end( ));
-      if( fm. value( ). sel( ) == op_kleene_or )
-         repl = term( op_kleene_exists, repl, vars. begin( ), vars. end( ));
-
-      auto replquant = repl. view_quant( );
-
-      // As long as kl. sub(i) is the same quantifier, we
-      // add the quantified variables to repl, and replace kl. sub(i)
-      // by its body:
-
-      while( kl. sub(i). sel( ) == repl. sel( ))
-      {
-         auto q = kl. sub(i). view_quant( );
-         for( size_t v = 0; v != q. size( ); ++ v )
-            replquant. push_back( q. var(v) ); 
-         auto b = q. body( ); 
-            // Without this separate b, code is unsafe.
-         kl. update_sub( i, std::move(b) ); 
-      }
-
-      replquant. update_body( kl. extr_sub(i)); 
-      kl. update_sub( i, std::move( repl )); 
-   } 
-}
 
 void calc::optform::fake( )
 {

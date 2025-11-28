@@ -48,28 +48,6 @@ namespace calc
       void nrvarsmustbe( size_t i ); // Works for quantifiers only.
          // Both are exact.
 
-      void make_anf2( );
-      template< logic::replacement R > void rewr_outermost( const R& r )
-      {
-         if( fm. has_value( ))
-            fm. value( ) = logic::outermost( r, std::move( fm. value( )), 0 ); 
-      }
- 
-      template< logic::replacement R > void rewr_outermost( R& r )
-      {
-         if( fm. has_value( ))
-            fm. value( ) = logic::outermost( r, std::move( fm. value( )), 0 );
-      }
- 
-      void quantify( const std::vector< logic::vartype > & vars );
-      
-         // We must contain a Kleene disjunction or conjunction.
-         // Replace every member M of the Kleene operator 
-         // by Q asm M, where Q is the
-         // quantifier that fits to the Kleene operator.
-         // Kleene disj -> Kleene exists.
-         // Kleene conj -> Kleene forall.
-
       void fake( );  // Generate a message that fm was faked.
                      // Don't reset, so that we can return it.
 

@@ -20,13 +20,11 @@ namespace calc
    void print( std::ostream& out, const sequent& seq, const logic::term& tm );
    void print( std::ostream& out, logic::selector op );
 
-   bool operatorcorrect( logic::selector op, 
-                         const logic::term& fm, const sequent& seq, 
-                         std::string_view rule, errorstack& err ); 
-
    bool istautology( const logic::term& disj ); 
       // True if disj is (very obviously) a tautology.
 
+   void normalize( forall< disjunction< exists< logic::term >>> & cls );
+   
    void checkproof( const logic::beliefstate& blfs,
                     proofterm& prf, sequent& seq, errorstack& err );
       // In case of failure, we vent our frustration into err, and 
