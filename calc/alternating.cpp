@@ -74,7 +74,6 @@ logic::term calc::apply_prop( const logic::term& f, polarity pol )
 }
 
 
-
 logic::selector 
 calc::kleening( logic::selector sel, polarity pol )
 {
@@ -124,40 +123,76 @@ calc::kleening( logic::selector sel, polarity pol )
    throw std::logic_error( "Kleening: operator not implemented" );
 }
 
+
+calc::dnf< logic::term >
+calc::flatten( dnf< logic::term > disj ) 
+{
+   disjunction< exists< logic::term >> result;
+   for( auto& d : disj )
+   {
+      auto ctxt = std::move( d. vars );
+      auto ss = ctxt. size( );
+
+      extract( ctxt, pol_pos, d. body, result );
+
+      if( ctxt. size( ) != ss )
+         throw std::logic_error( "flatten: stack not restored" );
+   }
+
+   return result;
+}
+
+
 calc::anf< logic::term >
 calc::flatten( anf< logic::term > conj )
 {
-   // We do two passes: In the first, we try to flatten 
-   // and/forall. 
-   // In the second, we flatten or/exists.
-
-   anf< logic::term > conj2; 
-   for( auto& cl : conj )
+   anf< logic::term > result; 
+   for( auto& all : conj )
    {
-      if( cl. body. size( ) == 1 && cl. body. at(0). nrvars( ) == 0 )
-      {
-         std::vector< logic::vartype > ctxt = std::move( cl. vars );
-         conjunction< forall< logic::term >> res;
-         flatten( ctxt, pol_pos, cl. body. at(0). body, res );
+      all. body = flatten( std::move( all. body ));
+         // This is flatten for disjunction. It is not a recursion!
 
-         for( auto& c : res )
+      if( all. body. size( ) == 1 && all. body. at(0). nrvars( ) == 0 )
+      {
+         auto vars = std::move( all. vars ); 
+         auto ss = vars. size( );
+
+         conjunction< forall< logic::term >> cls;
+         extract( vars, pol_pos, all. body. at(0). body, cls );
+
+         if( vars. size( ) != ss )
+            throw std::logic_error( "flatten: context not restored" );
+
+         std::cout << cls << "\n";
+
+         for( auto& a : cls )
          {
-            conj2. append( forall( c. vars, disjunction( { exists( c. body ) } )));
+            dnf< logic::term > disj;
+            disj. append( exists( std::move( a. body )) );
+            std::cout << disj << "\n";
+
+            result. append( forall( 
+               std::move( a. vars ), flatten( std::move( disj ))));
          }
+
+         throw std::logic_error( "it happened" );
       }
+      else
+         result. append( std::move( all ));
    }
-   return conj2;
+
+   return result;
 }
 
 
 
 void 
-calc::flatten( std::vector< logic::vartype > & ctxt,
+calc::extract( std::vector< logic::vartype > & ctxt,
                polarity pol,
                const logic::term& fm,
                conjunction< forall< logic::term >> & conj )
 {
-   std::cout << "flatten-conj " << pol << " :  " << fm << " " << "\n";
+   std::cout << "extract-conj " << pol << " :  " << fm << " " << "\n";
 
    using namespace logic;
 
@@ -187,11 +222,11 @@ calc::flatten( std::vector< logic::vartype > & ctxt,
       return;
 
    case op_not:
-      flatten( ctxt, -pol, fm. view_unary( ). sub( ), conj );
+      extract( ctxt, -pol, fm. view_unary( ). sub( ), conj );
       return;
 
    case op_prop:
-      flatten_prop( ctxt, pol, fm. view_unary( ). sub( ), conj );
+      extract_prop( ctxt, pol, fm. view_unary( ). sub( ), conj );
       return;
 
    case op_and:
@@ -202,8 +237,8 @@ calc::flatten( std::vector< logic::vartype > & ctxt,
          if( kleening( fm. sel( ), pol ) == op_kleene_and )
          {
             auto bin = fm. view_binary( );
-            flatten( ctxt, pol, bin. sub1( ), conj );
-            flatten( ctxt, pol, bin. sub2( ), conj );
+            extract( ctxt, pol, bin. sub1( ), conj );
+            extract( ctxt, pol, bin. sub2( ), conj );
          }
          else
             conj. append( forall( ctxt, apply( fm, pol ) ));
@@ -218,8 +253,8 @@ calc::flatten( std::vector< logic::vartype > & ctxt,
          else
          {
             auto bin = fm. view_binary( );
-            flatten( ctxt, pol_pos, bin. sub1( ), conj );
-            flatten( ctxt, pol_neg, bin. sub2( ), conj );
+            extract( ctxt, pol_pos, bin. sub1( ), conj );
+            extract( ctxt, pol_neg, bin. sub2( ), conj );
          }
          return;
       }
@@ -254,7 +289,7 @@ calc::flatten( std::vector< logic::vartype > & ctxt,
          {
             auto ss = ctxt. size( );
             appendvars( ctxt, fm );
-            flatten( ctxt, pol, fm. view_quant( ). body( ), conj );
+            extract( ctxt, pol, fm. view_quant( ). body( ), conj );
             restore( ctxt, ss );
          }
          else
@@ -264,18 +299,18 @@ calc::flatten( std::vector< logic::vartype > & ctxt,
  
    }
 
-   std::cout << "flatten-conj " << pol << " :  " << fm. sel( ) << "\n";
+   std::cout << "extract-conj " << pol << " :  " << fm. sel( ) << "\n";
    throw std::logic_error( "operator not implemented" );
 }
 
 
 void
-calc::flatten( std::vector< logic::vartype > & ctxt, 
+calc::extract( std::vector< logic::vartype > & ctxt, 
                polarity pol,
                const logic::term& fm,
-               disjunction< exists< logic::term >> & disj )
+               dnf< logic::term > & disj )
 {
-   std::cout << "flatten-disj " << pol << " :  " << fm << " " << "\n";
+   // std::cout << "extract-disj " << pol << " :  " << fm << " " << "\n";
 
    using namespace logic;
 
@@ -305,11 +340,11 @@ calc::flatten( std::vector< logic::vartype > & ctxt,
       return;
 
    case op_not:
-      flatten( ctxt, -pol, fm. view_unary( ). sub( ), disj );
+      extract( ctxt, -pol, fm. view_unary( ). sub( ), disj );
       return;
 
    case op_prop:
-      flatten_prop( ctxt, pol, fm. view_unary( ). sub( ), disj );
+      extract_prop( ctxt, pol, fm. view_unary( ). sub( ), disj );
       return;
 
    case op_and:
@@ -320,8 +355,8 @@ calc::flatten( std::vector< logic::vartype > & ctxt,
          if( kleening( fm. sel( ), pol ) == op_kleene_or )
          {
             auto bin = fm. view_binary( );
-            flatten( ctxt, pol, bin. sub1( ), disj );
-            flatten( ctxt, pol, bin. sub2( ), disj );
+            extract( ctxt, pol, bin. sub1( ), disj );
+            extract( ctxt, pol, bin. sub2( ), disj );
          }
          else
             disj. append( exists( ctxt, apply( fm, pol ) ));
@@ -334,8 +369,8 @@ calc::flatten( std::vector< logic::vartype > & ctxt,
          if( pol == pol_pos )
          {
             auto bin = fm. view_binary( );
-            flatten( ctxt, pol_neg, bin. sub1( ), disj );
-            flatten( ctxt, pol_pos, bin. sub2( ), disj );
+            extract( ctxt, pol_neg, bin. sub1( ), disj );
+            extract( ctxt, pol_pos, bin. sub2( ), disj );
          }
          else
             disj. append( exists( ctxt, apply( fm, pol ) ));
@@ -374,7 +409,7 @@ calc::flatten( std::vector< logic::vartype > & ctxt,
       {
          auto ss = ctxt. size( );
          appendvars( ctxt, fm );
-         flatten( ctxt, pol, fm. view_quant( ). body( ), disj );
+         extract( ctxt, pol, fm. view_quant( ). body( ), disj );
          restore( ctxt, ss );
       }
       else
@@ -384,17 +419,17 @@ calc::flatten( std::vector< logic::vartype > & ctxt,
 
    }
 
-   std::cout << "flatten-disj " << pol << " :  " << fm. sel( ) << "\n";
+   std::cout << "extract-disj " << pol << " :  " << fm. sel( ) << "\n";
    throw std::logic_error( "operator not implemented" );
 }
 
 
 void
-calc::flatten_prop( std::vector< logic::vartype > & ctxt,
+calc::extract_prop( std::vector< logic::vartype > & ctxt,
                     polarity pol, const logic::term& fm,
                     conjunction< forall< logic::term >> & conj )
 {
-   std::cout << "flatten-conj-prop " << pol << " :  " << fm << " " << "\n";
+   std::cout << "extract-conj-prop " << pol << " :  " << fm << " " << "\n";
 
    using namespace logic;
 
@@ -423,7 +458,7 @@ calc::flatten_prop( std::vector< logic::vartype > & ctxt,
       return;
  
    case op_not:
-      flatten_prop( ctxt, pol, fm. view_unary( ). sub( ), conj );
+      extract_prop( ctxt, pol, fm. view_unary( ). sub( ), conj );
       return;
 
    case op_and:
@@ -433,8 +468,8 @@ calc::flatten_prop( std::vector< logic::vartype > & ctxt,
       if( pol == pol_pos )
       {
          auto bin = fm. view_binary( );
-         flatten_prop( ctxt, pol, bin. sub1( ), conj );
-         flatten_prop( ctxt, pol, bin. sub2( ), conj );
+         extract_prop( ctxt, pol, bin. sub1( ), conj );
+         extract_prop( ctxt, pol, bin. sub2( ), conj );
       }
       else
          conj. append( forall( ctxt, apply_prop( fm, pol ) ));
@@ -446,7 +481,7 @@ calc::flatten_prop( std::vector< logic::vartype > & ctxt,
       if( pol == pol_pos )
       {
          auto bin = fm. view_binary( );
-         flatten_prop( ctxt, pol, bin. sub1( ), conj );
+         extract_prop( ctxt, pol, bin. sub1( ), conj );
          auto op = op_implies;
          if( fm. sel( ) == op_lazy_or )
             op = op_or;
@@ -465,7 +500,7 @@ calc::flatten_prop( std::vector< logic::vartype > & ctxt,
       {
          auto ss = ctxt. size( );
          appendvars( ctxt, fm );
-         flatten_prop( ctxt, pol, fm. view_quant( ). body( ), conj );
+         extract_prop( ctxt, pol, fm. view_quant( ). body( ), conj );
          restore( ctxt, ss );
       }
       else
@@ -473,17 +508,17 @@ calc::flatten_prop( std::vector< logic::vartype > & ctxt,
       return;
    }
 
-   std::cout << "flatten-conj-prop " << pol << " :  " << fm. sel( ) << "\n";
+   std::cout << "extract-conj-prop " << pol << " :  " << fm. sel( ) << "\n";
    throw std::logic_error( "operator not implemented" );
 }
 
 
 void
-calc::flatten_prop( std::vector< logic::vartype > & ctxt,
+calc::extract_prop( std::vector< logic::vartype > & ctxt,
                     polarity pol, const logic::term& fm,
-                    disjunction< exists< logic::term >> & disj )
+                    dnf< logic::term > & disj )
 {
-   std::cout << "flatten-disj-prop " << pol << " :  " << fm << " " << "\n";
+   // std::cout << "extract-disj-prop " << pol << " :  " << fm << " " << "\n";
 
    using namespace logic;
 
@@ -512,7 +547,7 @@ calc::flatten_prop( std::vector< logic::vartype > & ctxt,
       return;
 
    case op_not:
-      flatten_prop( ctxt, pol, fm. view_unary( ). sub( ), disj );
+      extract_prop( ctxt, pol, fm. view_unary( ). sub( ), disj );
       return;
 
    case op_and:
@@ -524,8 +559,8 @@ calc::flatten_prop( std::vector< logic::vartype > & ctxt,
       else 
       {
          auto bin = fm. view_binary( ); 
-         flatten_prop( ctxt, pol, bin. sub1( ), disj );
-         flatten_prop( ctxt, pol, bin. sub2( ), disj );
+         extract_prop( ctxt, pol, bin. sub1( ), disj );
+         extract_prop( ctxt, pol, bin. sub2( ), disj );
       }
       return;
 
@@ -537,7 +572,7 @@ calc::flatten_prop( std::vector< logic::vartype > & ctxt,
       else
       {
          auto bin = fm. view_binary( );
-         flatten_prop( ctxt, pol, bin. sub1( ), disj );
+         extract_prop( ctxt, pol, bin. sub1( ), disj );
          pol = pol_pos;
          if( fm. sel( ) == op_lazy_or )
             pol = pol_neg; 
@@ -557,7 +592,7 @@ calc::flatten_prop( std::vector< logic::vartype > & ctxt,
          {
             size_t ss = ctxt. size( ); 
             appendvars( ctxt, fm );
-            flatten_prop( ctxt, pol, fm. view_quant( ). body( ), disj );
+            extract_prop( ctxt, pol, fm. view_quant( ). body( ), disj );
             restore( ctxt, ss );
          }
          return;
@@ -565,35 +600,11 @@ calc::flatten_prop( std::vector< logic::vartype > & ctxt,
 
    }
 
-   std::cout << "flatten-disj-prop " << pol << " :  " << fm. sel( ) << "\n";
+   std::cout << "extract-disj-prop " << pol << " :  " << fm. sel( ) << "\n";
    throw std::logic_error( "operator not implemented" );
 }
 
 
-
-#if 0
-
-logic::term 
-calc::alternating( const logic::term& f, logic::selector op, 
-                   unsigned int rank ) 
-{
-   if constexpr( false )
-   {
-      std::cout << "alternating " << op << "/" << rank << " :  " << f << "\n\n";
-   }
-
-   if( rank == 0 )
-      return f;
-   else
-   {
-      std::vector< logic::term > args;
-      logic::context ctxt; 
-      flatten( ctxt, f, op, rank, args );
-      return logic::term( op, args. begin( ), args. end( ));
-   }
-}
-
-#endif
 
 
 #if 0
@@ -640,6 +651,7 @@ calc::alternating( const logic::term& f, logic::selector op,
    throw std::logic_error( "rank: not in ANF" );
 }
 #endif
+
 
 #if 0
 

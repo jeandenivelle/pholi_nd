@@ -23,38 +23,38 @@ namespace calc
 
 
    template< typename F >
-   using anf = conjunction< forall< disjunction< exists<F>>>> ;
+   using dnf = disjunction< exists<F>> ;
+
+   template< typename F >
+   using anf = conjunction< forall< dnf<F>>> ;
+
 
    logic::selector kleening( logic::selector sel, polarity pol );
 
-
    anf< logic::term > flatten( anf< logic::term > conj );
+   dnf< logic::term > flatten( dnf< logic::term > disj );
 
-
-   void
-   flatten( std::vector< logic::vartype > & ctxt,
+   void extract( std::vector< logic::vartype > & ctxt,
             polarity pol,
             const logic::term& fm,
             conjunction< forall< logic::term >> & conj );
 
-   void 
-   flatten( std::vector< logic::vartype > & ctxt, 
+   void extract( std::vector< logic::vartype > & ctxt, 
             polarity pol, 
             const logic::term& fm,
-            disjunction< exists< logic::term >> & disj );
-
+            dnf< logic::term > & disj );
 
    void
-   flatten_prop( std::vector< logic::vartype > & ctxt,
+   extract_prop( std::vector< logic::vartype > & ctxt,
                  polarity pol,
                  const logic::term& fm,
                  conjunction< forall< logic::term >> & conj );
 
    void 
-   flatten_prop( std::vector< logic::vartype > & ctxt,
+   extract_prop( std::vector< logic::vartype > & ctxt,
                  polarity pol, 
                  const logic::term& fm,
-                 disjunction< exists< logic::term >> & disj );
+                 dnf< logic::term > & disj );
 
 }
 

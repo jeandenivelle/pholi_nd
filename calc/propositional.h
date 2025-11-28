@@ -1,4 +1,6 @@
 
+// Kleene propositional operators.
+
 #ifndef CALC_PROPOSITIONAL_
 #define CALC_PROPOSITIONAL_
 
@@ -38,7 +40,7 @@ namespace calc
          for( auto p = disj. begin( ); p != disj. end( ); ++ p )
          {
             if( p != disj. begin( ))
-               out << "; ";
+               out << ";  ";
             else 
                out << ' ';
             out << *p; 
@@ -79,7 +81,7 @@ namespace calc
          for( auto p = conj. begin( ); p != conj. end( ); ++ p )
          {
             if( p != conj. begin( ))
-               out << "; ";
+               out << ";  ";
             else
                out << ' ';
             out << *p;

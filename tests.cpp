@@ -147,9 +147,10 @@ void tests::add_settheory( logic::beliefstate& blfs )
 
 void tests::alternating( )
 {
-   std::cout << "testing clausify\n";
+   std::cout << "testing flattening:\n\n";
 
    using namespace logic;
+
    type O = type( logic::type_obj );
    type T = type( logic::type_form );
    type O2T = type( type_func, T, { O } );
@@ -159,47 +160,23 @@ void tests::alternating( )
    type X = type( type_unchecked, identifier( ) + "X" );
 
    auto fm = term( op_lazy_implies, "A"_unchecked, "B"_unchecked );
+   fm = ! term( op_prop, fm );
 
-   // fm = exists( {{ "aa", T }, { "bb", O2T }}, fm );
+   calc::dnf< logic::term > res;
+   res. append( calc::exists( { }, forall( {{ "xx", T }, { "yy", O }},
+                                      ( "aa"_unchecked || "bb"_unchecked )) &&
+                                    ( "xx"_unchecked || "yy"_unchecked  ))); 
+
+   calc::anf< logic::term > anf;
+   anf. append( calc::forall( {{ "aa", O2O }, { "bb", O } }, std::move( res )) );
  
-   calc::conjunction< calc::forall< term >> conj;
-   calc::disjunction< calc::exists< term >> disj;
-
-   std::vector< vartype > ctxt;
-   ctxt. push_back( { "y", O } );
-   calc::polarity pol = calc::pol_pos; 
-   flatten_prop( ctxt, pol, fm, conj );
-   flatten_prop( ctxt, pol, fm, disj );
-
-   std::cout << "conj = " << conj << "\n";
-   std::cout << "disj = " << disj << "\n";
+   std::cout << "before:\n";
+   std::cout << anf << "\n\n";
+   anf = flatten( std::move( anf ));
+   std::cout << "after:\n";
+   std::cout << anf << "\n\n";
  
 #if 0
-   if constexpr( false )
-   {
-      auto all1 =
-         forall( { { "y", O }}, 
-            apply( "p1"_unchecked, { 0_db, 1_db } ) ||
-            apply( "q1"_unchecked, { 0_db, 1_db } ));
-
-      auto all2 =
-         forall( { { "z", O2O }},
-            apply( "p2"_unchecked, { 1_db, 0_db } ) ||
-            exists( {{ "t", T }}, 
-               apply( "q2"_unchecked, { 2_db, 1_db, 0_db } )));
-
-      auto form = exists( { { "x", T }},
-            apply( "a"_unchecked, { 0_db } ) &&
-            exists( {{ "u", T }}, apply( "b"_unchecked, { 0_db, 1_db } )) ||
-            ( all1 && all2 ));
-
-      form = 5_db; 
-      // form = prop( !form );
-      std::cout << "the formula is " << form << "\n";
-
-      form = calc::alternating( form, logic::op_kleene_or, 2 );
-   }
-
    if constexpr( false ) 
    {
       std::cout << "\n\n";
@@ -225,35 +202,6 @@ void tests::alternating( )
          pretty::print( std::cout, blfs, ctxt, f );
       }
       return; 
-   }
-
-   if constexpr( true )
-   {
-      std::cout << "\n\n";
-      std::cout << "Testing Expand\n";
-      auto f = ( 0_db == 2_db );
-      f = apply( "ppp"_unchecked, { "serial"_unchecked, term( op_exact, exact(38)), 
-                                          term( op_exact, exact(42)) } );
-      f = term( op_let, { "zz", O }, apply( "gg"_unchecked, { 0_db } ), f );
-      f = !f;
-      f = term( op_let, { "yy", T }, apply( "ff"_unchecked, { 1_db } ), f );
-      f = term( op_forall, f, {{ "x", T }, { "y", O2O }} );
-      f = term( op_exists, f, {{ "a", O }, { "b", T }} );
-      f = term( op_lambda, f, {{ "hallo", O2T }} );
-      {
-         context ctxt;
-         pretty::print( std::cout, blfs, ctxt, f );
-         std::cout << "\n";
-      }
-      auto exp = calc::expander( identifier( ) + "serial", 2, blfs, err );
-      std::cout << exp << "\n";
-      f = outermost( exp, f, 0 );
-      {
-         context ctxt;
-         pretty::print( std::cout, blfs, ctxt, f );
-      }
-      std::cout << exp << "\n";
-      return;
    }
 #endif
 }
