@@ -124,6 +124,7 @@ calc::checkproof( const logic::beliefstate& blfs,
    case prf_flatten: 
       {
          auto fm = std::move( seq. get(0));
+         seq. pop( );
          std::cout << "flattening " << fm << "\n";
 
          anf< logic::term > conj;
@@ -144,7 +145,7 @@ calc::checkproof( const logic::beliefstate& blfs,
          auto mainform = std::move( seq. get(0));
             // Should be a universally quantified disjunction,
             // without variables.
- 
+
          seq. pop( );
 
          std::cout << "mainform = " << mainform << "\n\n";
@@ -156,7 +157,6 @@ calc::checkproof( const logic::beliefstate& blfs,
          const dnf< logic::term > disj = std::move( mainform. body );
             // A disjunction of existentials:
 
-         size_t nrvars = seq. nrvars( );
          size_t nrlevels = seq. nrlevels( );
 
          if( disj. size( ) < elim. size( ))
@@ -174,8 +174,7 @@ calc::checkproof( const logic::beliefstate& blfs,
 
             // Create a new assumption level:
 
-            std::cout << "adding the level\n\n\n";
-            seq. addlevel( );
+            seq. addlevel( elim. name( ));
 
             seq. push( forall( disjunction{ exists( sub. body ) } ));
 
@@ -186,9 +185,6 @@ calc::checkproof( const logic::beliefstate& blfs,
             std::cout << "============================\n";
             seq. ugly( std::cout );  
             std::cout << "\n";
-
-            if( disj. size( ) > elim. size( ))
-               std::cout << "REST MUST BE COPIED\n";
 
 #if 0
          bool success = true;
@@ -220,6 +216,9 @@ calc::checkproof( const logic::beliefstate& blfs,
             while( seq. nrlevels( ) > nrlevels )
                seq. poplevel( );
          }
+         if( disj. size( ) > elim. size( ))
+            std::cout << "REST MUST BE COPIED\n";
+
 #if 0
          if( !success )
             return { };
@@ -234,7 +233,7 @@ calc::checkproof( const logic::beliefstate& blfs,
          auto cut = prf. view_propcut( );
  
          auto fm = cut. extr_fm( );  
-         size_t s = seq. nrvars( );
+         size_t ss = seq. contextsize( );
          fm = replace_debruijn( seq. db, fm );
  
          auto tp = checkandresolve( blfs, err, seq. ctxt, fm );
@@ -249,14 +248,14 @@ calc::checkproof( const logic::beliefstate& blfs,
 
          seq. push( forall( disjunction{ 
                 exists( logic::term( logic::op_not, fm )), exists(fm) } ));
- 
+
          return;
       }
 
    case prf_chain:
       {
          auto ch = prf. view_chain( );
-         size_t nrvars = seq. nrvars( );
+         size_t ss = seq. contextsize( );
          // size_t nrforms = seq. nrforms( );
 
          for( size_t i = 0; i != ch. size( ); ++ i )
@@ -321,10 +320,11 @@ calc::checkproof( const logic::beliefstate& blfs,
             throw std::logic_error( "variable has no definition" );
          }
 
-         if( seq. lastlevel( ). nrvars != seq. nrvars( ))
+         if( seq. lastlevel( ). contextsize != seq. contextsize( ))
             throw std::logic_error( "size of context does not fit to level" );
 
-         auto exp = localexpander( seq. nrvars( ) - ind - 1,  def -> second, 
+         auto exp = localexpander( seq. contextsize( ) - ind - 1,  
+                                   def -> second, 
                                    prf. view_expandlocal( ). occ( ));
 
          auto fm = std::move( seq. get(0));

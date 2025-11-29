@@ -1,4 +1,6 @@
 
+// Written by Hans de Nivelle, November 2025.
+
 #ifndef CALC_SEQUENT_
 #define CALC_SEQUENT_
 
@@ -22,22 +24,19 @@ namespace calc
    struct sequent
    {
 
-      struct lemma 
-      {
-         forall< disjunction< exists< logic::term >>> cls;
-         size_t nrvars;   // In context.
-      };
+      // An assumption level. We don't give names to
+      // individual formulas, only to assumption levels.
 
       struct level
       {
+         std::string name;   
+
          std::vector< forall< disjunction< exists< logic::term >>>> rpn; 
-         size_t nrvars;   // In context.
+         size_t contextsize;   
+            // When level is created.
 
-         std::vector< std::string > names; 
-            // So that they can be backtracked.
-
-         level( size_t nrvars )
-            : nrvars( nrvars )
+         level( std::string name, size_t contextsize )
+            : name( std::move( name )), contextsize( contextsize )
          { }
 
       };
@@ -49,20 +48,16 @@ namespace calc
          // proofchecking. 'db' stands for De Bruijn. 
 
       std::map< size_t, logic::term > defs;
-         // If a position in ctxt is a definition,
-         // its value is here.
+         // If a position in ctxt is a definition, its value is here.
 
       std::vector< level > lev;
          // Stack of stacks of derived formulas. 
-
-      std::map< std::string, std::vector< lemma >> lemmas;
-         // Last one is the current one.
 
       sequent( ) noexcept { } 
       sequent( sequent&& ) noexcept = default;
       sequent& operator = ( sequent&& ) noexcept = default;
 
-      size_t nrvars( ) const { return ctxt. size( ); } 
+      size_t contextsize( ) const { return ctxt. size( ); } 
       size_t nrlevels( ) const { return lev. size( ); }
 
 #if 0
@@ -80,8 +75,9 @@ namespace calc
       size_t define( const std::string& name, const logic::term& val,
                      const logic::type& tp );
 
-      void addlevel( );
+      void addlevel( std::string name );
       void poplevel( );
+
       const level& lastlevel( ) const { return lev. back( ); }
       level& lastlevel( ) { return lev. back( ); }
 

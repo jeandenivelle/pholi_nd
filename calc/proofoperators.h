@@ -12,19 +12,16 @@
 namespace calc
 {
 
-#if 0
-   inline proofterm orelim( const proofterm& disj, size_t nr,
-                            const std::string& name1, const proofterm& sub1,
-                            const std::string& name2, const proofterm& sub2 )
+   inline proofterm chain( std::initializer_list< proofterm > sub )
    {
-      return proofterm( prf_orelim, disj, nr, 
-                        {{ name1, sub1 }, { name2, sub2 }} );
+      return proofterm( prf_chain, sub );
    }
- 
-   inline proofterm existselim( const proofterm& ex, size_t nr,
-                                const std::string& name, const proofterm& sub )
-      { return proofterm( prf_existselim, ex, nr, name, sub ); }
-#endif
+
+   inline proofterm orexistselim( const std::string& name, 
+                                  std::initializer_list< proofterm > sub )
+   {
+      return proofterm( prf_orexistselim, name, sub );
+   }
  
    inline proofterm simplify( const proofterm& prf )
       { return proofterm( prf_simplify, prf ); }
@@ -42,8 +39,8 @@ namespace calc
       return proofterm( prf_select, prf, nr ); 
    }
       
-   inline proofterm show( const std::string& label, const proofterm& prf )
-      { return proofterm( prf_show, label, prf ); }
+   inline proofterm show( const std::string& label )
+      { return proofterm( prf_show, label ); }
 
 }
 

@@ -390,30 +390,30 @@ void tests::smallproofs( const logic::beliefstate& blfs, errorstack& err )
       auto nr = seq. define( "goal",
                              blfs. at( f. front( )). view_form( ). fm( ),
                              logic::type( logic::type_form ));
-      seq. addlevel( );
+      seq. addlevel( "goal" );
       seq. ugly( std::cout );
 
-      auto split = proofterm( prf_orexistselim,
-         { proofterm( prf_chain, 
+      auto split = orexistselim( "propcut", 
+         { chain( 
               { proofterm( prf_expandlocal, "goal", 0 ),
-                proofterm( prf_flatten ),
-                proofterm( prf_orexistselim,
-                   { proofterm( prf_chain, { prf_flatten,
-                        proofterm( prf_orexistselim, { } ) }
+                prf_flatten,
+                orexistselim( "xxx",
+                   { chain( { prf_flatten,
+                        orexistselim( "yyy", { 
+                           chain( { } ),
+                           chain( { } ) } ) }
                      ) } )  
               } ),
-           proofterm( prf_chain, { prf_nop } ) } );
+           chain( { prf_nop } ) } );
  
       auto prf = proofterm( prf_propcut, "goal"_unchecked );
-      prf = proofterm( prf_chain, 
-         { prf, split } );
+      prf = chain( { prf, split } );
       prf. print( indentation( ), std::cout );
 
       checkproof( blfs, prf, seq, err );
       seq. ugly( std::cout );
  
 #if 0
-
       auto orelim2 = proofterm( prf_orelim,
                         proofterm( prf_forallelim,
                            proofterm( prf_ident, identifier( ) + "hyp0001" ), 1,

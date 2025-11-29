@@ -11,6 +11,7 @@
 namespace calc
 {
 
+   
    // Our goal is predictability and reliability, not efficiency. 
    // This is part of the trusted core,
    // so implementation must be simple.

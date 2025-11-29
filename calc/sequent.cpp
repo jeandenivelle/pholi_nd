@@ -31,21 +31,16 @@ calc::sequent::define( const std::string& name,
 }
 
 void
-calc::sequent::addlevel( )
+calc::sequent::addlevel( std::string name )
 {
-   lev. push_back( level( nrvars( )));
+   lev. push_back( level( std::move( name ),  ctxt. size( )));
 }
 
 void 
 calc::sequent::poplevel( )
 {
    if( lev. size( ) == 0 )
-      throw std::logic_error( "no level to pop" );
-
-   for( const auto& name : lev. back( ). names )
-   {
-      lemmas. at( name ). pop_back( );
-   }
+      throw std::logic_error( "poplevel( ) : no level to pop" );
 
    lev. pop_back( );
 }
@@ -165,7 +160,8 @@ void calc::sequent::ugly( std::ostream& out ) const
    out << "Levels:\n";
    for( const auto& l : lev ) 
    {
-      out << "   nrvars = " << l. nrvars << ":\n";
+      out << "   level " << l. name << ", ";
+      out << "contextsize = " << l. contextsize << ":\n";
       for( const auto& f : l. rpn )
          out << "      " << f << "\n"; 
    } 

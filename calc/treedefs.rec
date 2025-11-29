@@ -15,9 +15,10 @@
 
 %option name { prf_name } => name : std::string
 %option call { prf_call } => nr : size_t, name : std::string
-%option ontop { prf_get } => name : std::string
+%option get  { prf_get } => level : std::string, ind : size_t
 
-%option orexistselim { prf_orexistselim } => [ branch : proofterm ] 
+%option orexistselim { prf_orexistselim } => 
+   name : std::string,[ branch : proofterm ] 
 
 %option expand { prf_expand } => 
    ident : identifier, occ : size_t, parent : proofterm 
@@ -37,7 +38,7 @@
 %option simplify { prf_simplify } => parent : proofterm 
 
 %option fake { prf_fake } => goal : logic::term
-%option show { prf_show } => comment : std::string, prf : proofterm
+%option show { prf_show } => comment : std::string
 
 %h_incl {
    #include "sequent.h"
@@ -218,7 +219,6 @@
             auto show = view_show( );
             out << ind << "show as ";
             out << "\"" << show. comment( ) << "\"\n";
-            show. prf( ). print( ind + 3, out );
             return;
          }
       }
