@@ -60,9 +60,6 @@ namespace calc
       size_t contextsize( ) const { return ctxt. size( ); } 
       size_t nrlevels( ) const { return lev. size( ); }
 
-#if 0
-      void restore( size_t s ); 
-#endif
       void ugly( std::ostream& out ) const;      
 #if 0
       void pretty( std::ostream& out, bool showblocked = false ) const;
@@ -81,11 +78,14 @@ namespace calc
       const level& lastlevel( ) const { return lev. back( ); }
       level& lastlevel( ) { return lev. back( ); }
 
+      const level& levelat( size_t ind ) const { return lev. at( ind ); }
+      level& levelat( size_t ind ) { return lev. at( ind ); }
+
       void push( forall< disjunction< exists< logic::term >>> form );
       void pop( );
 
-      forall< disjunction< exists< logic::term >>> & 
-      get( size_t ind );
+      forall< disjunction< exists< logic::term >>> & get( size_t ind );
+         // Gets from the last level.
 
       const forall< disjunction< exists< logic::term >>> & 
       get( size_t ind ) const;

@@ -30,15 +30,6 @@ namespace calc
    expand( const std::string& label, size_t nr, const proofterm& prf )
       { return proofterm( prf_expand, identifier( ) + label, nr, prf ); }
 
-   inline proofterm andintro( std::initializer_list< proofterm > sub ) 
-      { return proofterm( prf_andintro, sub ); } 
-
-   inline proofterm select( std::initializer_list< size_t > nr,
-                            const proofterm& prf )
-   {
-      return proofterm( prf_select, prf, nr ); 
-   }
-      
    inline proofterm show( const std::string& label )
       { return proofterm( prf_show, label ); }
 

@@ -95,7 +95,7 @@ namespace logic
     
    // A fullsubst completely removes the nearest DeBruijn indices 
    // #0,#1,#2, ... 
-   // DeBruijn that are not in the fullsubst are shifted down. 
+   // DeBruijn that are not in the domain of fullsubst are shifted down. 
 
    class fullsubst
    {

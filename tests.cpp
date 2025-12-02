@@ -400,7 +400,8 @@ void tests::smallproofs( const logic::beliefstate& blfs, errorstack& err )
                 orexistselim( "xxx",
                    { chain( { prf_flatten,
                         orexistselim( "yyy", { 
-                           chain( { } ),
+                           chain( { proofterm( prf_lift, "xxx", 0 ),
+                                    proofterm( prf_forallelim, { 0_db } ) } ),
                            chain( { } ) } ) }
                      ) } )  
               } ),

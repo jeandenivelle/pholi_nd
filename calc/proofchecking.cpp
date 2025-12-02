@@ -21,6 +21,21 @@ calc::normalize( forall< disjunction< exists< logic::term >>> & cls );
 // This is a very bad case of bloated implementation, 
 // which should be looked at from the programming language point of view. 
 
+auto 
+calc::lift( forall< disjunction< exists< logic::term >>> cls, size_t dist )
+   -> forall< disjunction< exists< logic::term >>>
+{
+   std::cout << "lifting " << cls << " over distance " << dist << "\n";
+   if( dist > 0 )
+   {
+      auto lift = logic::lifter( dist );
+      return outermost( lift, std::move( cls ), 0 );
+   }
+   else
+      return cls; 
+}
+
+
 bool calc::istautology( const logic::term& disj ) 
 {
    if( disj. sel( ) != logic::op_kleene_or )
@@ -177,7 +192,6 @@ calc::checkproof( const logic::beliefstate& blfs,
             seq. addlevel( elim. name( ));
 
             seq. push( forall( disjunction{ exists( sub. body ) } ));
-
             auto subproof = elim. extr_branch(i);
             checkproof( blfs, subproof, seq, err );
             elim. update_branch( i, std::move( subproof ));
@@ -300,7 +314,7 @@ calc::checkproof( const logic::beliefstate& blfs,
       {
          auto var = prf. view_expandlocal( ). var( );
 
-         // We have an identifier, we need a De Bruijn index:
+         // We have an identifier, but we need a De Bruijn index:
 
          size_t ind = seq. ctxt. size( );
          {  
@@ -334,6 +348,39 @@ calc::checkproof( const logic::beliefstate& blfs,
          seq. push( std::move(fm));
          return;
       }
+
+   case prf_lift:
+      {
+         auto lft = prf. view_lift( );
+
+         // This is not terribly efficient, but I think
+         // that the number of levels in a proof is logarithmic in its
+         // size.
+
+         seq. ugly( std::cout );
+
+         for( size_t lev = 0; lev != seq. nrlevels( ); ++ lev )
+         {
+            if( seq. levelat( lev ). name == lft. level( ))
+            { 
+               std::cout << "it was found!\n";
+               if( lft. ind( ) < seq. levelat( lev ). rpn. size( ))
+               {
+                  auto fm = seq. levelat( lev ). rpn[ lft. ind( ) ];
+                  std::cout << "here it is " << fm << "\n"; 
+                  seq. push( lift( std::move(fm),
+                                      seq. contextsize( ) -
+                                      seq. levelat( lev ). contextsize ));
+
+                  return;  // succesful return. 
+               }
+               else
+                  std::cout << "too big\n";
+            }
+         }
+         throw std::logic_error( " not found " );
+      }
+
 #if 0
    case prf_define: 
       {
@@ -392,88 +439,6 @@ calc::checkproof( const logic::beliefstate& blfs,
          return res;
       }
    
-   case prf_existselim:
-      {
-         std::vector< logic::vartype > assumptions;
-         std::vector< logic::exact > exactnames;
-            // The names that seq will give to the assumptions.
-            // Note that the sequent data structure is rotten.
-
-         while( exists. value( ). sel( ) == logic::op_kleene_exists )
-         {
-            auto ex = exists. value( ). view_quant( );
-
-            exists. value( ) = ex. body( );
-         }
-
-         for( const auto& a : assumptions ) 
-         {
-            logic::exact name = seq. assume( a.pref, a.tp );
-            exactnames. push_back( name );
-         }
-
-         {
-            logic::fullsubst namesubst;
-               // We need to substitute global names in place of
-               // of the DeBruijn indices.
-
-            for( const auto& e : exactnames )
-               namesubst. push( logic::term( logic::op_exact, e ));
-
-            exists. rewr_outermost( namesubst );
-         }
-
-         exists. make_anf2( );
-
-         seq. assume( elim. name( ), exists. value( ));
-
-         auto res = optform( proofcheck( elim. intro( ), seq, err ),
-                             "generic result of exists-elim", seq, err );
-
-         // We require that the result is a singleton conjunction:
-
-         res. musthave( logic::op_kleene_and );
-         res. getuniquesub( );
-         res. musthave( logic::op_kleene_or );
-         if( !res )
-         {
-            seq. restore( seqsize ); 
-            return { };
-         }
-
-         logic::exactcounter eigenvars( false );
-         for( size_t i = seqsize; i + 1 < seq. size( ); ++ i )
-            eigenvars. addtodomain( seq. getexactname(i));
-
-         count( eigenvars, res. value( ), 0 );
-
-         logic::introsubst intro;
-
-         std::vector< logic::vartype > usedassumptions;
-            // The ones that are used in the result. They need
-            // to be assumed.
-         
-         for( size_t i = 0; i != exactnames. size( ); ++ i )
-         {
-            if( eigenvars. at( exactnames[i] ))
-            {
-               intro. bind( exactnames[i] ); 
-               usedassumptions. push_back( assumptions[i] );
-            }
-         }
-         seq. restore( seqsize );
-         
-         // If no eigenvariable occurs in res, we can return res
-         // unchanged:
-
-         if( intro. size( ))
-         {
-            res. rewr_outermost( intro );
-            res. quantify( usedassumptions ); 
-         }
-         return logic::term( logic::op_kleene_and, { res. value( ) } );
-      }
-
    case prf_forallintro:
       {
          auto intro = prf. view_forallintro( );
@@ -514,26 +479,29 @@ calc::checkproof( const logic::beliefstate& blfs,
 
          return res. value( ); 
       }
+#endif
 
    case prf_forallelim:
       {
          auto elim = prf. view_forallelim( );
-         auto anf = proofcheck( elim. parent( ), seq, err );
-         if( !anf. has_value( ))
-            return anf;
+         seq. ugly( std::cout );
+         auto mainform = std::move( seq. get(0));
+            // Should be universally quantified.
 
-         auto forall = optform( std::move( anf ), "forall-elim", seq, err );
-         forall. musthave( logic::op_kleene_and );
-         forall. replacebysub( elim. nrforall( ));
-         forall. musthave( logic::op_kleene_forall );
-         forall. nrvarsmustbe( elim. size( )); 
+         seq. pop( );
+         std::cout << "mainform = " << mainform << "\n\n";
 
-         if( !forall ) return { };
+          
+         if( mainform. vars. size( ) != elim. size( ))
+         {
+            throw std::runtime_error( "forall elim wrong size" );
 
+         }
+ 
          size_t errstart = err. size( );
          logic::fullsubst subst;
 
-         auto q = forall. value( ). view_quant( ); 
+#if 0
          for( size_t i = 0; i != elim. size( ); ++ i )
          {
             logic::context ctxt;
@@ -570,8 +538,10 @@ calc::checkproof( const logic::beliefstate& blfs,
          auto res = outermost( subst, std::move( q. body( )), 0 ); 
          res = logic::term( logic::op_kleene_and, { res } );
          return res; 
+#endif
+         throw std::logic_error( "finished forallelim" );
       }
-
+#if 0
    case prf_andintro:
       {
          auto intro = prf. view_andintro( ); 

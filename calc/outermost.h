@@ -11,16 +11,6 @@
 namespace calc
 {
 
-#if 0
-   template< logic::replacement R > 
-   exists< logic::term > 
-   outermost( const R& repl, existential< logic::term > ex, size_t vardepth )
-   {
-      if( fm. has_value( ))
-         fm. value( ) = logic::outermost( r, std::move( fm. value( )), 0 ); 
-   }
-#endif
-
    template< logic::replacement R, typename F > 
    exists<F> 
    outermost( R& repl, exists<F> ex, size_t vardepth )
