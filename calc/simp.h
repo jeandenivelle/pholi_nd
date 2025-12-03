@@ -1,6 +1,6 @@
 
-#ifndef CALC_CLAUSESET_
-#define CALC_CLAUSESET_
+#ifndef CALC_PROPOSITIONAL_
+#define CALC_PROPOSITIONAL_
 
 #include <list>
 #include <iostream>
@@ -11,27 +11,14 @@
 namespace calc
 {
 
-   
-   // Our goal is predictability and reliability, not efficiency. 
-   // This is part of the trusted core,
-   // so implementation must be simple.
-   // We try to keep the clause set in order for predictability.
-
-   using clause = std::list< logic::term > ;
-
-   struct clauseset
+   struct propositional
    {
 
-      std::list< std::list< logic::term >> set;
+      conjunction< disjunction< logic::term >> cnf;
+         // No quantifiers.
 
-      clauseset( ) noexcept = default;
-      clauseset( clauseset&& ) noexcept = default;
-      clauseset& operator = ( clauseset&& ) noexcept = default;
-         // Deleting copy.
-
-      void insert( const logic::term& tm ); 
-         // We insert what we understand.
-
+      propositional( ) noexcept = default;
+ 
       uint64_t res_simplify( );
          // Do a resolution simplification.
          // We look for pairs A1 \/ R1,  A2 \/ R2 where

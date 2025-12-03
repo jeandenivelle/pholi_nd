@@ -27,7 +27,7 @@ namespace calc
       };
 
       std::list< markedform > lst; 
-         // True meanst available, false means blocked.
+         // True means available, false means blocked.
 
       disj_stack( ) noexcept = default;
 

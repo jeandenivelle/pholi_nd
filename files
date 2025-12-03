@@ -51,7 +51,7 @@
    printing.cpp
    optform.cpp
    proofchecking.cpp
-   clauseset.cpp
+   simp.cpp
  
 %dir Source/semantics
 %sources

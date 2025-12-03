@@ -1,5 +1,5 @@
 
-#include "clauseset.h"
+#include "simp.h"
 #include "logic/cmp.h"
 #include "logic/replacements.h"
 
