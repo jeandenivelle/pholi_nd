@@ -484,26 +484,42 @@ calc::checkproof( const logic::beliefstate& blfs,
    case prf_forallelim:
       {
          auto elim = prf. view_forallelim( );
-         seq. ugly( std::cout );
          auto mainform = std::move( seq. get(0));
             // Should be universally quantified.
 
          seq. pop( );
-         std::cout << "mainform = " << mainform << "\n\n";
 
-          
-         if( mainform. vars. size( ) != elim. size( ))
+         if( mainform. vars. size( ) < elim. size( ))
          {
-            throw std::runtime_error( "forall elim wrong size" );
-
+            throw std::runtime_error( "forallelim: Too many values" );
+            // We could just eliminate a few. 
          }
  
          size_t errstart = err. size( );
          logic::fullsubst subst;
 
-#if 0
+         size_t ss = seq. ctxt. size( );
+
+         bool alltypescorrect = true;
+
          for( size_t i = 0; i != elim. size( ); ++ i )
          {
+            auto inst = elim. extr_value(i);
+            auto tp = checkandresolve( blfs, err, seq. ctxt, inst );
+
+            if( ss != seq. ctxt. size( ))
+               throw std::logic_error( "size changed, should not happen" );
+
+            if( ! tp. has_value( ) ||  
+                !equal( tp. value( ), mainform. vars[i]. tp ))
+            {
+               alltypescorrect = false; 
+            }
+
+            elim. update_value( i, inst ); 
+            subst. push( std::move( inst ));
+
+#if 0
             logic::context ctxt;
             auto tm = elim. value(i);
             auto tp = checkandresolve( seq. blfs, err, ctxt, tm );
@@ -527,19 +543,27 @@ calc::checkproof( const logic::beliefstate& blfs,
                   err. push( std::move( bld ));
                }
             }
-         }
-        
-         if( subst. size( ) < elim. size( ))
-         {
-            auto header = printing::makeheader( seq, "forall-elim" );
-            err. addheader( errstart, std::move( header )); 
-            return { };
-         } 
-         auto res = outermost( subst, std::move( q. body( )), 0 ); 
-         res = logic::term( logic::op_kleene_and, { res } );
-         return res; 
 #endif
-         throw std::logic_error( "finished forallelim" );
+         }
+
+         if( !alltypescorrect )
+         {
+            throw std::runtime_error( "we cannot do forallinst, types wrong" );
+         }
+
+         std::cout << subst << "\n";
+         mainform = outermost( subst, std::move( mainform ), 0 ); 
+ 
+         // We do not remove the outermost forall, because the
+         // implementation requires its presence. We remove the variables
+         // that were instantiated. It is possible that some remain. 
+
+         mainform. vars. erase( mainform. vars. begin( ),
+                                mainform. vars. begin( ) + elim. size( ));
+
+         std::cout << "after instantiation: " << mainform << "\n";
+         seq. push( std::move( mainform ));
+         return;  
       }
 #if 0
    case prf_andintro:
