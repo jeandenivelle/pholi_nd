@@ -10,6 +10,35 @@ calc::formula::ugly( std::ostream& out ) const
 }
 #endif
 
+
+auto calc::sequent::level::get( size_t ind ) const 
+   -> const forall< disjunction< exists< logic::term >>> & 
+{
+   throw std::logic_error( "const is used" );
+   if( ind >= rpn. size( ))
+      throw std::logic_error( "sequent::level::at: index too high" ); 
+
+   return rpn. at( rpn. size( ) - ind - 1 );
+}
+
+auto calc::sequent::level::get( size_t ind ) 
+   -> forall< disjunction< exists< logic::term >>> &
+{
+   if( ind >= rpn. size( ))
+      throw std::logic_error( "sequent::level::at: index too high" );
+
+   return rpn. at( rpn. size( ) - ind - 1 );
+}
+
+
+void calc::sequent::level::pop( )
+{
+   if( rpn. size( ) == 0 )
+      throw std::logic_error( "pop: no formula to pop" );
+
+   rpn. pop_back( );
+}
+
 size_t
 calc::sequent::assume( const std::string& name,
                        const logic::type& tp )
@@ -30,53 +59,36 @@ calc::sequent::define( const std::string& name,
    return nr;
 }
 
-void
-calc::sequent::addlevel( std::string name )
+void calc::sequent::push_back( std::string name )
 {
    lev. push_back( level( std::move( name ),  ctxt. size( )));
 }
 
-void 
-calc::sequent::poplevel( )
+void calc::sequent::pop_back( )
 {
    if( lev. size( ) == 0 )
-      throw std::logic_error( "poplevel( ) : no level to pop" );
+      throw std::logic_error( "pop_back( ) : nothing to pop" );
 
    lev. pop_back( );
 }
 
-void 
-calc::sequent::push( forall< disjunction< exists< logic::term >>> form )
+const calc::sequent::level& calc::sequent::back( ) const 
 {
    if( lev. size( ) == 0 )
-      throw std::logic_error( "push: stack is empty" );
+      throw std::logic_error( "back: there are no levels" );
 
-   lev. back( ). rpn. push_back( std::move( form ));
+   return lev. back( );
 }
 
-void 
-calc::sequent::pop( )
-{
+calc::sequent::level& calc::sequent::back( )
+{  
    if( lev. size( ) == 0 )
-      throw std::logic_error( "pop: no levels" );
+      throw std::logic_error( "back: there are no levels" );
 
-   if( lev. back( ). rpn. size( ) == 0 )
-      throw std::logic_error( "pop: no formula to pop" );
-
-   lev. back( ). rpn. pop_back( );
+   return lev. back( );
 }
 
-auto calc::sequent::get( size_t ind ) -> 
-   forall< disjunction< exists< logic::term >>> & 
-{
-   if( lev. size( ) == 0 )
-      throw std::logic_error( "get: no levels" );
 
-   if( ind >= lev. back( ). rpn. size( ))
-      throw std::logic_error( "get: index too high" ); 
-
-   return lev. back( ). rpn. at( lev. back( ). rpn. size( ) - ind - 1 );
-}
 
 #if 0
 

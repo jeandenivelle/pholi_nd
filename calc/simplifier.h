@@ -1,23 +1,51 @@
 
-#ifndef CALC_PROPOSITIONAL_
-#define CALC_PROPOSITIONAL_
+#ifndef CALC_SIMPLIFIER_
+#define CALC_SIMPLIFIER_
 
-#include <list>
 #include <iostream>
 
 #include "logic/term.h"
-#include "logic/cmp.h"
+#include "propositional.h"
+#include "quantifiers.h"
+#include "polarity.h"
 
 namespace calc
 {
 
-   struct propositional
+   struct simplifier
    {
+      class truth
+      {
+         uint8_t val;
 
-      conjunction< disjunction< logic::term >> cnf;
-         // No quantifiers.
+         explicit truth( uint8_t val ) 
+            : val( val )
+         { }
 
-      propositional( ) noexcept = default;
+      public:
+         static truth F( ) { return truth(4); }
+         static truth E( ) { return truth(2); }
+         static truth T( ) { return truth(1); }
+
+         bool subset( truth t ) const
+            { return ! ( val & ~t. val ); }
+
+         truth& operator |= ( const truth& t ) 
+            { val |= t. val; return *this; }
+
+         truth& operator &= ( const truth& t )
+            { val &= t. val; return *this; }
+        
+         void print( std::ostream& out ) const;
+      };
+
+
+      conjunction< disjunction< exists< logic::term >>> cnf;
+         // We accept existentially quantified terms, because one
+         // could have simplifications of form
+         // !A + exists( x1, ... xn, F ),  A => exists( x1, ... xn, F ).
+
+      simplifier( ) noexcept = default;
  
       uint64_t res_simplify( );
          // Do a resolution simplification.
@@ -42,17 +70,23 @@ namespace calc
 
       void remove_redundant( );
          // Remove disjunctions subsumed by disj. 
-
-      logic::term getformula( ) const;
-
-      size_t size( ) const { return set. size( ); } 
+      // size_t size( ) const { return set. size( ); } 
   
       void print( std::ostream& out ) const;
    };
 
-   bool inconflict( short int pol1, const logic::term& tm1,
-                    short int pol2, const logic::term& tm2 );
+   inline simplifier::truth 
+   operator & ( simplifier::truth t1, simplifier::truth t2 ) 
+      { return t1 &= t2; }
 
+   inline simplifier::truth  
+   operator | ( simplifier::truth t1, simplifier::truth t2 ) 
+      { return t1 |= t2; }
+ 
+   bool inconflict( polarity pol1, const logic::term& tm1,
+                    polarity pol2, const logic::term& tm2 );
+
+#if 0
    bool inconflict( const logic::term& tm1, const logic::term& tm2 );
 
    bool contains( const logic::term& lit, const clause& cls, 
@@ -77,6 +111,7 @@ namespace calc
       // I do not expect that tautologies will occur in meaningful proofs.
 
    logic::term disjunction( const clause& cls );
+#endif
 
 }
 

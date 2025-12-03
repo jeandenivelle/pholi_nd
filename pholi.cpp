@@ -12,7 +12,7 @@
 #include "logic/pretty.h"
 #include "logic/termoperators.h"
 
-#include "calc/localexpander.h"
+#include "calc/simplifier.h"
 
 #include "parsing/parser.h"
 
@@ -81,6 +81,12 @@ includefile( logic::beliefstate& blfs,
 
 int main( int argc, char* argv[] )
 {
+   auto t = calc::simplifier::truth::F( ) |
+            calc::simplifier::truth::T( );
+
+   std::cout << t << "\n";
+   return 0;
+
    errorstack err;
  
    logic::beliefstate blfs;  

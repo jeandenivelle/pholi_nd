@@ -11,6 +11,7 @@
 #include "localexpander.h"
 #include "outermost.h"
 #include "alternating.h"
+#include "simplifier.h"
 
 #include "printing.h"
 
@@ -138,8 +139,8 @@ calc::checkproof( const logic::beliefstate& blfs,
 
    case prf_flatten: 
       {
-         auto fm = std::move( seq. get(0));
-         seq. pop( );
+         auto fm = std::move( seq. back( ). get(0));
+         seq. back( ). pop( );
          std::cout << "flattening " << fm << "\n";
 
          anf< logic::term > conj;
@@ -148,7 +149,7 @@ calc::checkproof( const logic::beliefstate& blfs,
 
          std::cout << conj << "\n\n";
          for( auto& c : conj )
-            seq. push( std::move(c) );
+            seq. back( ). push( std::move(c) );
 
          return;
       }
@@ -157,11 +158,11 @@ calc::checkproof( const logic::beliefstate& blfs,
       {
          auto elim = prf. view_orexistselim( ); 
          seq. ugly( std::cout );
-         auto mainform = std::move( seq. get(0));
+         auto mainform = std::move( seq. back( ). get(0));
             // Should be a universally quantified disjunction,
             // without variables.
 
-         seq. pop( );
+         seq. back( ). pop( );
 
          std::cout << "mainform = " << mainform << "\n\n";
          if( mainform. vars. size( ))
@@ -172,7 +173,7 @@ calc::checkproof( const logic::beliefstate& blfs,
          const dnf< logic::term > disj = std::move( mainform. body );
             // A disjunction of existentials:
 
-         size_t nrlevels = seq. nrlevels( );
+         size_t nrlevels = seq. size( );
 
          if( disj. size( ) < elim. size( ))
             std::cout << "CRASH IS IMMINENT\n";
@@ -189,9 +190,9 @@ calc::checkproof( const logic::beliefstate& blfs,
 
             // Create a new assumption level:
 
-            seq. addlevel( elim. name( ));
+            seq. push_back( elim. name( ));
 
-            seq. push( forall( disjunction{ exists( sub. body ) } ));
+            seq. back( ). push( forall( disjunction{ exists( sub. body ) } ));
             auto subproof = elim. extr_branch(i);
             checkproof( blfs, subproof, seq, err );
             elim. update_branch( i, std::move( subproof ));
@@ -227,8 +228,8 @@ calc::checkproof( const logic::beliefstate& blfs,
 
             seq. restore( seqsize );
 #endif
-            while( seq. nrlevels( ) > nrlevels )
-               seq. poplevel( );
+            while( seq. size( ) > nrlevels )
+               seq. pop_back( );
          }
          if( disj. size( ) > elim. size( ))
             std::cout << "REST MUST BE COPIED\n";
@@ -247,7 +248,7 @@ calc::checkproof( const logic::beliefstate& blfs,
          auto cut = prf. view_propcut( );
  
          auto fm = cut. extr_fm( );  
-         size_t ss = seq. contextsize( );
+         size_t ss = seq. ctxt. size( );
          fm = replace_debruijn( seq. db, fm );
  
          auto tp = checkandresolve( blfs, err, seq. ctxt, fm );
@@ -260,7 +261,7 @@ calc::checkproof( const logic::beliefstate& blfs,
          cut. update_fm( fm );
          fm = logic::term( logic::op_prop, fm );
 
-         seq. push( forall( disjunction{ 
+         seq. back( ). push( forall( disjunction{ 
                 exists( logic::term( logic::op_not, fm )), exists(fm) } ));
 
          return;
@@ -269,7 +270,7 @@ calc::checkproof( const logic::beliefstate& blfs,
    case prf_chain:
       {
          auto ch = prf. view_chain( );
-         size_t ss = seq. contextsize( );
+         size_t ss = seq. ctxt. size( );
          // size_t nrforms = seq. nrforms( );
 
          for( size_t i = 0; i != ch. size( ); ++ i )
@@ -334,18 +335,18 @@ calc::checkproof( const logic::beliefstate& blfs,
             throw std::logic_error( "variable has no definition" );
          }
 
-         if( seq. lastlevel( ). contextsize != seq. contextsize( ))
+         if( seq. back( ). contextsize != seq. ctxt. size( ))
             throw std::logic_error( "size of context does not fit to level" );
 
-         auto exp = localexpander( seq. contextsize( ) - ind - 1,  
+         auto exp = localexpander( seq. ctxt. size( ) - ind - 1,  
                                    def -> second, 
                                    prf. view_expandlocal( ). occ( ));
 
-         auto fm = std::move( seq. get(0));
-         seq. pop( );
+         auto fm = std::move( seq. back( ). get(0));
+         seq. back( ). pop( );
 
          fm = outermost( exp, std::move(fm), 0 );
-         seq. push( std::move(fm));
+         seq. back( ). push( std::move(fm));
          return;
       }
 
@@ -359,18 +360,18 @@ calc::checkproof( const logic::beliefstate& blfs,
 
          seq. ugly( std::cout );
 
-         for( size_t lev = 0; lev != seq. nrlevels( ); ++ lev )
+         for( size_t lev = 0; lev != seq. size( ); ++ lev )
          {
-            if( seq. levelat( lev ). name == lft. level( ))
+            if( seq. at( lev ). name == lft. level( ))
             { 
                std::cout << "it was found!\n";
-               if( lft. ind( ) < seq. levelat( lev ). rpn. size( ))
+               if( lft. ind( ) < seq. at( lev ). rpn. size( ))
                {
-                  auto fm = seq. levelat( lev ). rpn[ lft. ind( ) ];
+                  auto fm = seq. at( lev ). rpn[ lft. ind( ) ];
                   std::cout << "here it is " << fm << "\n"; 
-                  seq. push( lift( std::move(fm),
-                                      seq. contextsize( ) -
-                                      seq. levelat( lev ). contextsize ));
+                  seq. back( ). push( lift( std::move(fm),
+                                      seq. ctxt. size( ) -
+                                      seq. at( lev ). contextsize ));
 
                   return;  // succesful return. 
                }
@@ -484,10 +485,10 @@ calc::checkproof( const logic::beliefstate& blfs,
    case prf_forallelim:
       {
          auto elim = prf. view_forallelim( );
-         auto mainform = std::move( seq. get(0));
+         auto mainform = std::move( seq. back( ). get(0));
             // Should be universally quantified.
 
-         seq. pop( );
+         seq. back( ). pop( );
 
          if( mainform. vars. size( ) < elim. size( ))
          {
@@ -562,7 +563,7 @@ calc::checkproof( const logic::beliefstate& blfs,
                                 mainform. vars. begin( ) + elim. size( ));
 
          std::cout << "after instantiation: " << mainform << "\n";
-         seq. push( std::move( mainform ));
+         seq. back( ). push( std::move( mainform ));
          return;  
       }
 #if 0
@@ -637,11 +638,26 @@ calc::checkproof( const logic::beliefstate& blfs,
 
          return result;
       }
+
+#endif
  
    case prf_simplify:
       {
-         auto simp = prf. view_simplify( );
+         std::vector< forall< disjunction< exists< logic::term >>>> ignored;
+         simplifier simp;
 
+         auto& last = seq. back( );
+         for( auto& f : last )
+         {
+            if( f. vars. size( ))
+               ignored. push_back( std::move(f));
+            else
+               simp. cnf. append( std::move( f. body ));
+         }
+  
+         std::cout << simp << "\n";
+ 
+#if 0
          auto form = proofcheck( simp. parent( ), seq, err );
 
          if( !form. has_value( ))
@@ -651,8 +667,10 @@ calc::checkproof( const logic::beliefstate& blfs,
          set. insert( form. value( ));
          set. fully_simplify( );
          return set. getformula( );
+#endif
+         throw std::logic_error( "that was simplify" ); 
       }
-
+#if 0
    case prf_fake:
       {
          auto res = optform( prf. view_fake( ). goal( ), "fake", seq, err );

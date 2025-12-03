@@ -1,58 +1,29 @@
 
-#include "simp.h"
+#include "simplifier.h"
 #include "logic/cmp.h"
 #include "logic/replacements.h"
 
-
-void calc::clauseset::insert( const logic::term& tm )
+void 
+calc::simplifier::truth::print( std::ostream& out ) const
 {
-   switch( tm. sel( ))
+   if( val == 0 )
    {
-   case logic::op_kleene_and:
-      {
-         auto kl = tm. view_kleene( );
-         for( size_t i = 0; i != kl. size( ); ++ i )
-            insert( kl. sub(i));
-         return; 
-      }
-
-   case logic::op_kleene_or:
-      {
-         auto kl = tm. view_kleene( );
-         auto clause = std::list< logic::term > ( );
-         for( size_t i = 0; i != kl. size( ); ++ i )
-            clause. push_back( kl. sub(i));
-         set. push_back( std::move( clause ));
-         return;
-      }
-
-   case logic::op_kleene_forall:
-      {
-         auto quant = tm. view_quant( );
-         if( quant. size( ) == 0 )
-            insert( quant. body( ));
-         return;
-      }
-         
+      out << '0';
+      return;
    }
 
-   std::cout << "clauseset::insert " << tm. sel( ) << "\n";
-   throw std::logic_error( "insert: unknown selector type" );
+   std::cout << "val = " << (int) val << "\n";
 
-   auto kl = tm. view_kleene( );
-   for( size_t i = 0; i != kl. size( ); ++ i )
-   {
-      if( kl. sub(i). sel( ) != logic::op_kleene_or )
-         return;
-
-      auto cls = kl. sub(i). view_kleene( );
-      set. push_back( std::list< logic::term > ( ));
-      for( size_t j = 0; j != cls. size( ); ++ j )
-         set. back( ). push_back( cls. sub(j));
-   }
-
-   return; 
+   if( F( ). subset( *this )) 
+      out << 'F';
+   if( E( ). subset( *this ))
+      out << 'E';
+   if( T( ). subset( *this ))
+      out << 'T';
 }
+
+
+#if 0
 
 uint64_t calc::clauseset::res_simplify( )
 {
@@ -203,39 +174,24 @@ calc::clauseset::getformula( ) const
    return res;
 }
 
+#endif
+
 void
-calc::clauseset::print( std::ostream& out ) const
+calc::simplifier::print( std::ostream& out ) const
 {
-   out << "Clause Set:\n";
-   for( const auto& cls : set )
-   {
-      out << "   ";
-      if( cls. size( ) > 0 )
-      {
-         for( auto p = cls. begin( ); p != cls. end( ); ++ p )
-         {
-            if( p != cls. begin( ))
-               out << ", ";
-            out << *p;
-         }
-      }
-      else
-         out << "(empty)";
-      out << "\n";
-   }
-   out << "\n";
+   out << "Simplifier:\n";
+   out << cnf << "\n";
 }
 
+
 bool
-calc::inconflict( short int pol1, const logic::term& tm1,
-                  short int pol2, const logic::term& tm2 )
+calc::inconflict( polarity pol1, const logic::term& tm1,
+                  polarity pol2, const logic::term& tm2 )
 {
-   // std::cout << pol1 << "  " << tm1 << "   " << pol2 << "  " << tm2 << "\n";
+   std::cout << "conflict ";
+   std::cout << pol1 << "  " << tm1 << "   " << pol2 << "  " << tm2 << "\n";
 
    if( pol1 > 0 && pol2 < 0 && logic::equal( tm1, tm2 ))
-      return true;
-
-   if( pol1 < 0 && pol2 > 0 && logic::equal( tm1, tm2 ))
       return true;
 
    if( pol1 < 0 && tm1. sel( ) == logic::op_prop &&
@@ -253,6 +209,7 @@ calc::inconflict( short int pol1, const logic::term& tm1,
    return false;
 }
 
+#if 0
 
 bool
 calc::inconflict( const logic::term& tm1, const logic::term& tm2 )
@@ -378,4 +335,6 @@ calc::disjunction( const clause& cls )
       kl. push_back( lit ); 
    return res;
 }
+
+#endif
 

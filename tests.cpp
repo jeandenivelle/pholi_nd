@@ -390,7 +390,7 @@ void tests::smallproofs( const logic::beliefstate& blfs, errorstack& err )
       auto nr = seq. define( "goal",
                              blfs. at( f. front( )). view_form( ). fm( ),
                              logic::type( logic::type_form ));
-      seq. addlevel( "goal" );
+      seq. push_back( "goal" );
       seq. ugly( std::cout );
 
       auto split = orexistselim( "propcut", 
@@ -401,7 +401,8 @@ void tests::smallproofs( const logic::beliefstate& blfs, errorstack& err )
                    { chain( { prf_flatten,
                         orexistselim( "yyy", { 
                            chain( { proofterm( prf_lift, "xxx", 0 ),
-                                    proofterm( prf_forallelim, { 0_db } ) } ),
+                                    proofterm( prf_forallelim, { 0_db } ),
+                                    prf_simplify } ),
                            chain( { } ) } ) }
                      ) } )  
               } ),

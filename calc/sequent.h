@@ -33,12 +33,32 @@ namespace calc
 
          std::vector< forall< disjunction< exists< logic::term >>>> rpn; 
          size_t contextsize;   
-            // When level is created.
+            // At the moment when the level is created.
 
          level( std::string name, size_t contextsize )
             : name( std::move( name )), contextsize( contextsize )
          { }
 
+         void push( forall< disjunction< exists< logic::term >>> form )
+            { rpn. push_back( std::move( form )); }
+
+         const forall< disjunction< exists< logic::term >>> & 
+            get( size_t ind ) const; 
+ 
+         forall< disjunction< exists< logic::term >>> &
+            get( size_t ind );
+
+         using iterator = 
+         std::vector< forall< disjunction< exists< logic::term >>>> 
+                 :: iterator;
+
+         iterator begin( ) { return rpn. begin( ); }
+         iterator end( ) { return rpn. end( ); }
+            // Be careful with those, because the order is from
+            // bottom of stack to top of stack. They are useful
+            // for copying or processing.
+
+         void pop( );
       };
 
        
@@ -57,8 +77,7 @@ namespace calc
       sequent( sequent&& ) noexcept = default;
       sequent& operator = ( sequent&& ) noexcept = default;
 
-      size_t contextsize( ) const { return ctxt. size( ); } 
-      size_t nrlevels( ) const { return lev. size( ); }
+      size_t size( ) const { return lev. size( ); }
 
       void ugly( std::ostream& out ) const;      
 #if 0
@@ -72,25 +91,17 @@ namespace calc
       size_t define( const std::string& name, const logic::term& val,
                      const logic::type& tp );
 
-      void addlevel( std::string name );
-      void poplevel( );
+      void push_back( std::string name );
+      void pop_back( );
 
-      const level& lastlevel( ) const { return lev. back( ); }
-      level& lastlevel( ) { return lev. back( ); }
+      const level& back( ) const;
+      level& back( );
 
-      const level& levelat( size_t ind ) const { return lev. at( ind ); }
-      level& levelat( size_t ind ) { return lev. at( ind ); }
-
-      void push( forall< disjunction< exists< logic::term >>> form );
-      void pop( );
-
-      forall< disjunction< exists< logic::term >>> & get( size_t ind );
-         // Gets from the last level.
-
-      const forall< disjunction< exists< logic::term >>> & 
-      get( size_t ind ) const;
+      const level& at( size_t ind ) const { return lev. at( ind ); }
+      level& at( size_t ind ) { return lev. at( ind ); }
 
    };
+
 
    inline std::ostream& operator << ( std::ostream& out, const sequent& seq )
    {
