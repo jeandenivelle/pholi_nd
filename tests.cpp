@@ -256,13 +256,18 @@ void tests::simplify( )
 
    std::cout << subsumes( calc::exists( { { "x", T }}, 0_db ),
                           calc::exists( { { "y", O }}, prop( 0_db ))) << "\n";
-   return;
 
    calc::simplifier simp;
    auto cl1 = calc::disjunction( { 
-      calc::exists( "A"_unchecked ), 
-      calc::exists( "B"_unchecked ),
-      calc::exists( "C"_unchecked ) } );
+      calc::exists( 0_db == 1_db ), 
+      calc::exists( !"B"_unchecked ),
+      calc::exists( prop( "B"_unchecked )),
+      calc::exists( {{ "x", T }, {"y", O }}, 1_db == 0_db ) } );
+
+   std::cout << cl1 << "\n";
+   simplify( cl1 );
+   std::cout << cl1 << "\n";
+   return;
 
    simp. cnf. append( cl1 );
 

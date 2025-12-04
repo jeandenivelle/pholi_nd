@@ -1,5 +1,6 @@
 
 // Kleene propositional operators:
+// Written by Hans de Nivelle, November 2025.
 
 #ifndef CALC_PROPOSITIONAL_
 #define CALC_PROPOSITIONAL_
@@ -33,6 +34,16 @@ namespace calc
 
       size_t size( ) const { return disj. size( ); }
       const F& at( size_t i ) const { return disj. at(i); }
+
+      iterator erase( iterator it ) 
+      { 
+         // Swap with last:
+
+         if( it + 1 != end( ))
+            std::swap( *it, disj. back( ));
+         disj. pop_back( );
+         return it;
+      }
 
       void print( std::ostream& out ) const
       {

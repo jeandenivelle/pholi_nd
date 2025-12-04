@@ -247,13 +247,85 @@ calc::subsumes( const exists< logic::term > & ex1,
 }
 
 
+bool calc::trivially_true( const logic::term& tm )
+{
+   if( tm. sel( ) == logic::op_true )
+      return true;
+
+   if( tm. sel( ) == logic::op_equals )
+   {
+      auto bin = tm. view_binary( );
+      if( equal( bin. sub1( ), bin. sub2( )))
+         return true;
+   }
+
+   if( tm. sel( ) == logic::op_prop )
+   {
+      const auto& sub = tm. view_unary( ). sub( ); 
+      
+      if( sub. sel( ) == logic::op_equals ||
+          sub. sel( ) == logic::op_prop ||
+          sub. sel( ) == logic::op_false ||
+          sub. sel( ) == logic::op_true )
+      {
+         return true;
+      }
+   }
+
+   return false;
+}
+
+
 void calc::simplify( disjunction< exists< logic::term >> & cls )
 {
-   auto copy = disjunction< exists< logic::term >> ( );
-   
+   auto into = cls. begin( ); 
+   while( into != cls. end( ))
+   {
+      if( into -> vars. size( ) == 0 && trivially_true( into -> body ))
+      {
+         cls = disjunction( { exists( logic::term( logic::op_true )) } );
+         return;
+      }
 
+      if( into -> body. sel( ) == logic::op_not )
+      {
+         // We allow variables, because exists ... FALSE 
+         // is still FALSE.
 
+         const auto& sub = into -> body. view_unary( ). sub( );
+         if( trivially_true( sub ))
+         {
+            into = cls. erase( into );
+            goto skipped;
+         }
+      }
 
+      if( into -> body. sel( ) == logic::op_equals )
+      {
+         // Check if equality must be flipped:
+
+         auto bin = into -> body. view_binary( );
+         if( is_lt( logic::kbo( bin. sub1( ), bin. sub2( ))) )
+         {
+            into -> body = logic::term( logic::op_equals,
+                            bin. sub2( ), bin. sub1( ));
+         } 
+      }
+ 
+      for( auto from = cls. begin( ); from != cls. end( ); ++ from )
+      {
+         if( from != into && subsumes( *from, *into ))
+         {
+            into = cls. erase( into ); 
+            goto skipped;
+         }
+      }
+
+      ++ into;
+
+   skipped:
+      ;
+   }
 }
 
 #if 0
@@ -284,34 +356,6 @@ calc::subset( const clause& cls1, clause::const_iterator skip1,
    return true; 
 }
 
-bool
-calc::certainly( short int pol, const logic::term& tm )
-{
-   if( tm. sel( ) == logic::op_not )
-   {
-      auto un = tm. view_unary( );
-      return certainly( -pol, un. sub( ));
-   }
-
-   if( pol > 0 && tm. sel( ) == logic::op_prop )
-   {
-      auto un = tm. view_unary( ); 
-      if( un. sub( ). sel( ) == logic::op_equals ||
-          un. sub( ). sel( ) == logic::op_prop )
-      {
-         return true;
-      }
-   }
-
-   if( pol > 0 && tm. sel( ) == logic::op_equals ) 
-   {
-      auto eq = tm. view_binary( );
-      if( equal( eq. sub1( ), eq. sub2( )))
-         return true;
-   }
-
-   return false;
-}
 
 void calc::remove_repeated( clause& cls ) 
 {
@@ -334,17 +378,6 @@ void calc::remove_repeated( clause& cls )
       else
          ++ it;
    }
-}
-
-bool
-calc::istautology( const clause& cls )
-{
-   for( const auto& lit : cls ) 
-   {
-      if( certainly( 1, lit ))
-         return true;
-   }
-   return false;
 }
 
 logic::term

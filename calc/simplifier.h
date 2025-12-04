@@ -62,14 +62,16 @@ namespace calc
    bool subsumes( const exists< logic::term > & ex1,
                   const exists< logic::term > & ex2 );
       // Very incomplete!  
-                  
-
+   
+   bool trivially_true( const logic::term& tm );
+      // Catches a few trivial cases:
+      //    TRUE, ( t = t ), # t1 = t2, ## t, and # FALSE, # TRUE.
+               
    void simplify( disjunction< exists< logic::term >> & cls );
       // Remove redundant literals, and direct equalities using
       // KBO.
-
+   
 #if 0
-
    bool contains( const logic::term& lit, const clause& cls, 
                   clause::const_iterator skip );
 
