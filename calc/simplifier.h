@@ -7,38 +7,13 @@
 #include "logic/term.h"
 #include "propositional.h"
 #include "quantifiers.h"
-#include "polarity.h"
+#include "prefix.h"
 
 namespace calc
 {
 
    struct simplifier
    {
-      class truth
-      {
-         uint8_t val;
-
-         explicit truth( uint8_t val ) 
-            : val( val )
-         { }
-
-      public:
-         static truth F( ) { return truth(4); }
-         static truth E( ) { return truth(2); }
-         static truth T( ) { return truth(1); }
-
-         bool subset( truth t ) const
-            { return ! ( val & ~t. val ); }
-
-         truth& operator |= ( const truth& t ) 
-            { val |= t. val; return *this; }
-
-         truth& operator &= ( const truth& t )
-            { val &= t. val; return *this; }
-        
-         void print( std::ostream& out ) const;
-      };
-
 
       conjunction< disjunction< exists< logic::term >>> cnf;
          // We accept existentially quantified terms, because one
@@ -46,17 +21,19 @@ namespace calc
          // !A + exists( x1, ... xn, F ),  A => exists( x1, ... xn, F ).
 
       simplifier( ) noexcept = default;
+      simplifier( simplifier&& ) = default;
+      simplifier& operator = ( simplifier&& ) = default;
  
       uint64_t res_simplify( );
          // Do a resolution simplification.
          // We look for pairs A1 \/ R1,  A2 \/ R2 where
-         // A1,A2 are in conflict, and R1 is a subset of R2.
+         // A1,A2 are in conflict, and R1 subsumes R2.
          // In that case, we remove A2. 
  
       uint64_t eq_simplify( ); 
          // Do a paramodulation simplification.
          // We look for pairs t1 == t2 \/ R1, A2[t1] \/ R2,
-         // where R1 is a subset of R2. In that case,
+         // where R1 subsumes R2. In that case,
          // we replace t1 by t2. 
          // We use KBO for directing the equality, so it can be in the
          // other direction too.
@@ -75,19 +52,23 @@ namespace calc
       void print( std::ostream& out ) const;
    };
 
-   inline simplifier::truth 
-   operator & ( simplifier::truth t1, simplifier::truth t2 ) 
-      { return t1 &= t2; }
+   std::pair< prefix, const logic::term* > 
+   decompose( const logic::term& tm );
+      // Assumes ANF.
 
-   inline simplifier::truth  
-   operator | ( simplifier::truth t1, simplifier::truth t2 ) 
-      { return t1 |= t2; }
- 
-   bool inconflict( polarity pol1, const logic::term& tm1,
-                    polarity pol2, const logic::term& tm2 );
+   bool inconflict( const logic::term& tm1, const logic::term& tm2 );
+   bool subsumes( const logic::term& tm1, const logic::term& tm2 );
+
+   bool subsumes( const exists< logic::term > & ex1,
+                  const exists< logic::term > & ex2 );
+      // Very incomplete!  
+                  
+
+   void simplify( disjunction< exists< logic::term >> & cls );
+      // Remove redundant literals, and direct equalities using
+      // KBO.
 
 #if 0
-   bool inconflict( const logic::term& tm1, const logic::term& tm2 );
 
    bool contains( const logic::term& lit, const clause& cls, 
                   clause::const_iterator skip );

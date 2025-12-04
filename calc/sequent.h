@@ -31,7 +31,7 @@ namespace calc
       {
          std::string name;   
 
-         std::vector< forall< disjunction< exists< logic::term >>>> rpn; 
+         std::vector< forall< disjunction< exists< logic::term >>>> stack; 
          size_t contextsize;   
             // At the moment when the level is created.
 
@@ -40,7 +40,7 @@ namespace calc
          { }
 
          void push( forall< disjunction< exists< logic::term >>> form )
-            { rpn. push_back( std::move( form )); }
+            { stack. push_back( std::move( form )); }
 
          const forall< disjunction< exists< logic::term >>> & 
             get( size_t ind ) const; 
@@ -52,8 +52,8 @@ namespace calc
          std::vector< forall< disjunction< exists< logic::term >>>> 
                  :: iterator;
 
-         iterator begin( ) { return rpn. begin( ); }
-         iterator end( ) { return rpn. end( ); }
+         iterator begin( ) { return stack. begin( ); }
+         iterator end( ) { return stack. end( ); }
             // Be careful with those, because the order is from
             // bottom of stack to top of stack. They are useful
             // for copying or processing.

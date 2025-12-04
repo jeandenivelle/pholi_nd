@@ -3,23 +3,26 @@
 #include "logic/cmp.h"
 #include "logic/replacements.h"
 
-void 
-calc::simplifier::truth::print( std::ostream& out ) const
+
+std::pair< calc::prefix, const logic::term* > 
+calc::decompose( const logic::term& tm )
 {
-   if( val == 0 )
+   if( tm. sel( ) == logic::op_prop )
    {
-      out << '0';
-      return;
+      return std::pair( prefix::F( ) | prefix::T( ), 
+                        & tm. view_unary( ). sub( ) );   
    }
 
-   std::cout << "val = " << (int) val << "\n";
+   if( tm. sel( ) == logic::op_not )
+   {
+      const auto& sub = tm. view_unary( ). sub( );
+      if( sub. sel( ) == logic::op_prop )
+         return std::pair( prefix::E( ), & sub. view_unary( ). sub( ));
+      else
+         return std::pair( prefix::F( ), & sub );
+   }
 
-   if( F( ). subset( *this )) 
-      out << 'F';
-   if( E( ). subset( *this ))
-      out << 'E';
-   if( T( ). subset( *this ))
-      out << 'T';
+   return std::pair( prefix::T( ), & tm );
 }
 
 
@@ -180,62 +183,81 @@ void
 calc::simplifier::print( std::ostream& out ) const
 {
    out << "Simplifier:\n";
-   out << cnf << "\n";
+   for( const auto& disj : cnf )
+      out << "   " << disj << "\n";
+   out << "\n";
 }
 
 
 bool
-calc::inconflict( polarity pol1, const logic::term& tm1,
-                  polarity pol2, const logic::term& tm2 )
+calc::inconflict( const logic::term& tm1, const logic::term& tm2 )
 {
-   std::cout << "conflict ";
-   std::cout << pol1 << "  " << tm1 << "   " << pol2 << "  " << tm2 << "\n";
+   std::cout << "inconflict ";
+   std::cout << tm1 << "   " << tm2 << "\n";
 
-   if( pol1 > 0 && pol2 < 0 && logic::equal( tm1, tm2 ))
-      return true;
+   auto dec1 = decompose( tm1 );
+   auto dec2 = decompose( tm2 );
 
-   if( pol1 < 0 && tm1. sel( ) == logic::op_prop &&
-       logic::equal( tm1. view_unary( ). sub( ), tm2 ))
+   if( ( dec1. first & dec2. first ). isempty( ))
    {
-      return true;
-   }
-
-   if( pol2 < 0 && tm2. sel( ) == logic::op_prop &&
-       logic::equal( tm1, tm2. view_unary( ). sub( )) )
-   {
-      return true;
+      if( logic::equal( *dec1. second, *dec2. second ))
+         return true; 
    }
 
    return false;
 }
 
-#if 0
 
 bool
-calc::inconflict( const logic::term& tm1, const logic::term& tm2 )
+calc::subsumes( const logic::term& tm1, const logic::term& tm2 )
 {
-   // This is probably a point where one would like to have matching.
-   // We try to bring some order in the chaos by separating out
-   // negation.
+   std::cout << "subsumes ";
+   std::cout << tm1 << "   " << tm2 << "\n";
 
-   if( tm1. sel( ) == logic::op_not )
+   auto dec1 = decompose( tm1 );
+   auto dec2 = decompose( tm2 );
+
+   if( dec1. first. subset( dec2. first ))
    {
-      if( tm2. sel( ) == logic::op_not )
-      {
-         return inconflict( -1, tm1. view_unary( ). sub( ),
-                            -1, tm2. view_unary( ). sub( ));
-      }
-      else
-         return inconflict( -1, tm1. view_unary( ). sub( ), 1, tm2 );
+      if( logic::equal( *dec1. second, *dec2. second ))
+         return true;
    }
-   else
-   {
-      if( tm2. sel( ) == logic::op_not )
-         return inconflict( 1, tm1, -1, tm2. view_unary( ). sub( ) );
-      else
-         return inconflict( 1, tm1, 1, tm2 );
-   }
+
+   return false;
 }
+
+
+bool
+calc::subsumes( const exists< logic::term > & ex1, 
+                const exists< logic::term > & ex2 )
+{
+   std::cout << "subsumes ";
+   std::cout << ex1 << "   " << ex2 << "\n";
+
+   if( ex1. vars. size( ) != ex2. vars. size( ))
+      return false;
+
+   for( size_t i = 0; i != ex1. vars. size( ); ++ i )
+   {
+      if( !equal( ex1. vars[i]. tp, ex2. vars[i]. tp ))
+         return false;
+   }
+
+   return subsumes( ex1. body, ex2. body );
+}
+
+
+void calc::simplify( disjunction< exists< logic::term >> & cls )
+{
+   auto copy = disjunction< exists< logic::term >> ( );
+   
+
+
+
+}
+
+#if 0
+#if 0
 
 bool 
 calc::contains( const logic::term& lit, 
@@ -335,6 +357,7 @@ calc::disjunction( const clause& cls )
       kl. push_back( lit ); 
    return res;
 }
+#endif
 
 #endif
 

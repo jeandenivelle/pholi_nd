@@ -1,5 +1,5 @@
 
-// Kleene propositional operators.
+// Kleene propositional operators:
 
 #ifndef CALC_PROPOSITIONAL_
 #define CALC_PROPOSITIONAL_

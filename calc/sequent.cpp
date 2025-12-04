@@ -15,28 +15,28 @@ auto calc::sequent::level::get( size_t ind ) const
    -> const forall< disjunction< exists< logic::term >>> & 
 {
    throw std::logic_error( "const is used" );
-   if( ind >= rpn. size( ))
+   if( ind >= stack. size( ))
       throw std::logic_error( "sequent::level::at: index too high" ); 
 
-   return rpn. at( rpn. size( ) - ind - 1 );
+   return stack. at( stack. size( ) - ind - 1 );
 }
 
 auto calc::sequent::level::get( size_t ind ) 
    -> forall< disjunction< exists< logic::term >>> &
 {
-   if( ind >= rpn. size( ))
+   if( ind >= stack. size( ))
       throw std::logic_error( "sequent::level::at: index too high" );
 
-   return rpn. at( rpn. size( ) - ind - 1 );
+   return stack. at( stack. size( ) - ind - 1 );
 }
 
 
 void calc::sequent::level::pop( )
 {
-   if( rpn. size( ) == 0 )
+   if( stack. size( ) == 0 )
       throw std::logic_error( "pop: no formula to pop" );
 
-   rpn. pop_back( );
+   stack. pop_back( );
 }
 
 size_t
@@ -174,7 +174,7 @@ void calc::sequent::ugly( std::ostream& out ) const
    {
       out << "   level " << l. name << ", ";
       out << "contextsize = " << l. contextsize << ":\n";
-      for( const auto& f : l. rpn )
+      for( const auto& f : l. stack )
          out << "      " << f << "\n"; 
    } 
 }

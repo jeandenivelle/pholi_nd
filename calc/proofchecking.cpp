@@ -365,9 +365,9 @@ calc::checkproof( const logic::beliefstate& blfs,
             if( seq. at( lev ). name == lft. level( ))
             { 
                std::cout << "it was found!\n";
-               if( lft. ind( ) < seq. at( lev ). rpn. size( ))
+               if( lft. ind( ) < seq. at( lev ). stack. size( ))
                {
-                  auto fm = seq. at( lev ). rpn[ lft. ind( ) ];
+                  auto fm = seq. at( lev ). stack[ lft. ind( ) ];
                   std::cout << "here it is " << fm << "\n"; 
                   seq. back( ). push( lift( std::move(fm),
                                       seq. ctxt. size( ) -

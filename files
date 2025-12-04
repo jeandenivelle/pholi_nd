@@ -51,6 +51,7 @@
    printing.cpp
    optform.cpp
    proofchecking.cpp
+   prefix.cpp
    simplifier.cpp
  
 %dir Source/semantics

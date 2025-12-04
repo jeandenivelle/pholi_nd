@@ -14,6 +14,7 @@
 #include "calc/expander.h"
 #include "calc/projection.h"
 #include "calc/proofoperators.h"
+#include "calc/simplifier.h"
 
 #include "semantics/interpretation.h"
 
@@ -253,21 +254,48 @@ void tests::simplify( )
    type O2O = type( type_func, O, { O } );
    type OT2O = type( type_func, O, { O, T } );
 
-   auto cl1 = term( logic::op_kleene_or,
-      { "A"_unchecked, "B"_unchecked, "C"_unchecked } );
-   auto cl2 = term( logic::op_kleene_or,
-      { ! "A"_unchecked , "B"_unchecked, "C"_unchecked } );
-   auto cl3 = term( logic::op_kleene_or,
-      { "b1"_unchecked == "b2"_unchecked, "S"_unchecked } );
-   auto cl4 = term( logic::op_kleene_or, 
-      { "b2"_unchecked == "b3"_unchecked, "S"_unchecked } );
-   auto cl5 = term( logic::op_kleene_or,
-      { ! "R"_unchecked } );
-   auto cl6 = term( logic::op_kleene_or,
-      { ! prop( "C"_unchecked ), "B"_unchecked } );
+   std::cout << subsumes( calc::exists( { { "x", T }}, 0_db ),
+                          calc::exists( { { "y", O }}, prop( 0_db ))) << "\n";
+   return;
 
-   auto conj = term( logic::op_kleene_and, { cl1, cl5, cl2, cl6, cl3, cl4 } );
-   std::cout << conj << "\n";
+   calc::simplifier simp;
+   auto cl1 = calc::disjunction( { 
+      calc::exists( "A"_unchecked ), 
+      calc::exists( "B"_unchecked ),
+      calc::exists( "C"_unchecked ) } );
+
+   simp. cnf. append( cl1 );
+
+   auto cl2 = calc::disjunction( { 
+      calc::exists( ! "A"_unchecked ),
+      calc::exists( "B"_unchecked ),
+      calc::exists( "C"_unchecked ) } );
+
+   simp. cnf. append( cl2 );
+
+   auto cl3 = calc::disjunction( { 
+      calc::exists( "b1"_unchecked == "b2"_unchecked ),
+      calc::exists( "S"_unchecked ) } );
+
+   simp. cnf. append( cl3 );
+
+   auto cl4 = calc::disjunction( {
+      calc::exists( "b2"_unchecked == "b3"_unchecked ), 
+      calc::exists( "S"_unchecked ) } );
+
+   simp. cnf. append( cl4 );
+
+   auto cl5 = calc::disjunction( { 
+      calc::exists( ! "R"_unchecked ) } );
+
+   simp. cnf. append( cl5 );
+
+   auto cl6 = calc::disjunction( { 
+      calc::exists( ! prop( "C"_unchecked )), 
+      calc::exists("B"_unchecked ) } );
+
+   simp. cnf. append( cl6 );
+   std::cout << simp << "\n";
 
 #if 0
    calc::clauseset cls;
