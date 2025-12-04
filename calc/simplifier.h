@@ -70,31 +70,21 @@ namespace calc
    void simplify( disjunction< exists< logic::term >> & cls );
       // Remove redundant literals, and direct equalities using
       // KBO.
-   
-#if 0
-   bool contains( const logic::term& lit, const clause& cls, 
-                  clause::const_iterator skip );
+  
+   // Make this a separate class?
+ 
+   bool 
+   subsumes( const exists< logic::term > & lit, 
+             const conjunction< disjunction< exists< logic::term >>> & cls,
+             conjunction< disjunction< exists< logic::term >>> :: const_iterator skip );
 
-   bool subset( const clause& cls1, 
-                clause::const_iterator skip1,
-                const clause& cls2, 
-                   clause::const_iterator skip2 );
+   bool 
+   subsumes( const conjunction< disjunction< exists< logic::term >>> & cls1,
+             conjunction< disjunction< exists< logic::term >>> :: const_iterator skip1,
+             const conjunction< disjunction< exists< logic::term >>> & cls2,
+             conjunction< disjunction< exists< logic::term >>> :: const_iterator skip2 );
+
       // True if cls1 \ skip1 is a subset of cls2 \ skip2.
-
-   bool certainly( short int pol, const logic::term& tm );
-      // If pol > 0, certainly true.
-      // If pol < 0, certainly false.
-
-   void remove_repeated( clause& cls );
-         // Remove repeated literals 
-         // and literals that are certainly false. 
-
-   bool istautology( const clause& cls );
-      // True if we contain a literal that is certainly true. 
-      // I do not expect that tautologies will occur in meaningful proofs.
-
-   logic::term disjunction( const clause& cls );
-#endif
 
 }
 
