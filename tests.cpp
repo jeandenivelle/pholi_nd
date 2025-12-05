@@ -254,29 +254,29 @@ void tests::simplify( )
    type O2O = type( type_func, O, { O } );
    type OT2O = type( type_func, O, { O, T } );
 
-   std::cout << subsumes( calc::exists( { { "x", T }}, 0_db ),
-                          calc::exists( { { "y", O }}, prop( 0_db ))) << "\n";
-
    calc::simplifier simp;
    auto cl1 = calc::disjunction( { 
-      calc::exists( 0_db == 1_db ), 
-      calc::exists( !"B"_unchecked ),
-      calc::exists( prop( "B"_unchecked )),
-      calc::exists( {{ "x", T }, {"y", O }}, 1_db == 0_db ) } );
-
-   std::cout << cl1 << "\n";
-   simplify( cl1 );
-   std::cout << cl1 << "\n";
-   return;
+      calc::exists( ! "A"_unchecked ), 
+      calc::exists( ! "B"_unchecked ),
+      calc::exists( ! "C"_unchecked ),
+      calc::exists( 1_db == 0_db ) } );
 
    simp. cnf. append( cl1 );
 
    auto cl2 = calc::disjunction( { 
-      calc::exists( ! "A"_unchecked ),
-      calc::exists( "B"_unchecked ),
-      calc::exists( "C"_unchecked ) } );
+      calc::exists( prop( "A"_unchecked )),
+      calc::exists( {}, 1_db == 0_db ),
+      calc::exists( ! "B"_unchecked ),
+      calc::exists( prop( "C"_unchecked )) } );
 
    simp. cnf. append( cl2 );
+
+   std::cout << cl1 << "\n";
+   std::cout << cl2 << "\n";
+
+   std::cout << calc::rewrite( cl1, cl2 ) << "\n";
+   std::cout << cl2 << "\n";
+   return;
 
    auto cl3 = calc::disjunction( { 
       calc::exists( "b1"_unchecked == "b2"_unchecked ),

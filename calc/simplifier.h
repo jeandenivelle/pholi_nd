@@ -25,12 +25,6 @@ namespace calc
       simplifier( simplifier&& ) = default;
       simplifier& operator = ( simplifier&& ) = default;
  
-      uint64_t res_simplify( );
-         // Do a resolution simplification.
-         // We look for pairs A1 \/ R1,  A2 \/ R2 where
-         // A1,A2 are in conflict, and R1 subsumes R2.
-         // In that case, we remove A2. 
- 
       uint64_t eq_simplify( ); 
          // Do a paramodulation simplification.
          // We look for pairs t1 == t2 \/ R1, A2[t1] \/ R2,
@@ -58,11 +52,14 @@ namespace calc
       // Assumes ANF.
 
    bool inconflict( const logic::term& tm1, const logic::term& tm2 );
+      // If yes, then it cannot occur that [tm1] = [tm2] = T.
+
    bool subsumes( const logic::term& tm1, const logic::term& tm2 );
 
    bool subsumes( const exists< logic::term > & ex1,
                   const exists< logic::term > & ex2 );
-      // Very incomplete!  
+      // Very incomplete! If yes, then [ex1] = T implies
+      // [ex2] = T.  
    
    bool trivially_true( const logic::term& tm );
       // Catches a few trivial cases:
@@ -71,7 +68,12 @@ namespace calc
    void simplify( disjunction< exists< logic::term >> & cls );
       // Remove redundant literals, and direct equalities using
       // KBO.
-  
+ 
+   bool 
+   subsumes( const exists< logic::term > & lit,
+             const simplifier::clause & cls,
+             simplifier::clause::const_iterator skip );
+
    bool 
    subsumes( const simplifier::clause & cls1,
              simplifier::clause::const_iterator skip1,
@@ -84,10 +86,10 @@ namespace calc
    // True if it happened:
  
    bool 
-   rewrite( const simplifier::clause & from, simplifier::clause & into );
+   rewrite( const simplifier::clause& from, simplifier::clause& into );
 
    bool
-   resolve( const simplifier::clause & from, simplifier::clause & into );
+   resolve( const simplifier::clause& from, simplifier::clause& into );
 
 }
 

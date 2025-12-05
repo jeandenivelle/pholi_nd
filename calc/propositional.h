@@ -20,9 +20,10 @@ namespace calc
          : disj( init ) 
       { }
 
-      void append( F f )
-         { disj. push_back( std::move(f)); }
-      
+      void append( F f ) { disj. push_back( std::move(f)); }
+      void pop( ) { disj. pop_back( ); }
+         // We are order sensitive.
+ 
       using iterator = std::vector<F> :: iterator;
       using const_iterator = std::vector<F> :: const_iterator;
 
@@ -35,15 +36,7 @@ namespace calc
       size_t size( ) const { return disj. size( ); }
       const F& at( size_t i ) const { return disj. at(i); }
 
-      iterator erase( iterator it ) 
-      { 
-         // Swap with last:
-
-         if( it + 1 != end( ))
-            std::swap( *it, disj. back( ));
-         disj. pop_back( );
-         return it;
-      }
+      iterator erase( iterator it ) { return disj. erase( it ); } 
 
       void print( std::ostream& out ) const
       {
@@ -71,8 +64,9 @@ namespace calc
          : conj( init )
       { }
 
-      void append( F f )
-         { conj. push_back( std::move(f)); }
+      void append( F f ) { conj. push_back( std::move(f)); }
+      void pop( ) { conj. pop_back( ); } 
+         // We are order sensitive.
 
       using iterator = std::vector<F> :: iterator;
       using const_iterator = std::vector<F> :: const_iterator;

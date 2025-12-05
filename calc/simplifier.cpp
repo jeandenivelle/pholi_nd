@@ -1,5 +1,7 @@
 
 #include "simplifier.h"
+#include "outermost.h"
+
 #include "logic/cmp.h"
 #include "logic/replacements.h"
 
@@ -27,39 +29,6 @@ calc::decompose( const logic::term& tm )
 
 
 #if 0
-
-uint64_t calc::clauseset::res_simplify( )
-{
-   uint64_t counter = 0;
-
-   for( auto from = set. begin( ); from != set. end( ); ++ from )
-   {
-      for( auto into = set. begin( ); into != set. end( ); ++ into ) 
-      {
-         if( into != from )
-         {
-            for( auto p = from -> begin( ); p != from -> end( ); ++ p )
-            {
-               auto in = into -> begin( ); 
-               while( in != into -> end( ))
-               {
-                  if( inconflict( *p, *in ) && subset( *from, p, *into, in )) 
-                  {
-                     std::cout << *p << " conflicts " << *in << "\n";
-                     in = into -> erase( in );
-                     ++ counter; 
-                  }
-                  else 
-                     ++ in;
-               }
-            }
-         } 
-      }
-   }
-
-   return counter;
-}
-
 
 uint64_t calc::clauseset::eq_simplify( )
 {
@@ -193,7 +162,7 @@ bool
 calc::inconflict( const logic::term& tm1, const logic::term& tm2 )
 {
    std::cout << "inconflict ";
-   std::cout << tm1 << "   " << tm2 << "\n";
+   std::cout << tm1 << "   " << tm2 << " ?\n";
 
    auto dec1 = decompose( tm1 );
    auto dec2 = decompose( tm2 );
@@ -211,9 +180,6 @@ calc::inconflict( const logic::term& tm1, const logic::term& tm2 )
 bool
 calc::subsumes( const logic::term& tm1, const logic::term& tm2 )
 {
-   std::cout << "subsumes ";
-   std::cout << tm1 << "   " << tm2 << "\n";
-
    auto dec1 = decompose( tm1 );
    auto dec2 = decompose( tm2 );
 
@@ -328,16 +294,15 @@ void calc::simplify( disjunction< exists< logic::term >> & cls )
    }
 }
 
-#if 0
-#if 0
 
 bool 
-calc::contains( const logic::term& lit, 
-                const clause& cls, clause::const_iterator skip )
+calc::subsumes( const exists< logic::term > & lit,
+                const simplifier::clause & cls,
+                simplifier::clause::const_iterator skip )
 {
    for( auto q = cls. begin( ); q != cls. end( ); ++ q )
    {
-      if( q != skip && equal( lit, *q ))
+      if( q != skip && subsumes( lit, *q ))
          return true;
    } 
    
@@ -345,40 +310,78 @@ calc::contains( const logic::term& lit,
 }
 
 bool 
-calc::subset( const clause& cls1, clause::const_iterator skip1,
-              const clause& cls2, clause::const_iterator skip2 )
+calc::subsumes( const simplifier::clause& cls1, 
+                simplifier::clause::const_iterator skip1,
+                const simplifier::clause& cls2, 
+                simplifier::clause::const_iterator skip2 )
 {
    for( auto p1 = cls1. begin( ); p1 != cls1. end( ); ++ p1 )
    {
-      if( p1 != skip1 && !contains( *p1, cls2, skip2 ))
+      if( p1 != skip1 && !subsumes( *p1, cls2, skip2 ))
          return false;
    }
    return true; 
 }
 
-
-void calc::remove_repeated( clause& cls ) 
+bool 
+calc::resolve( const simplifier::clause& from,
+               simplifier::clause& into )
 {
-   auto it = cls. begin( );
-   while( it != cls. end( ))
-   {
-      bool skip = false;
-
-      if( certainly( -1, *it ))
-         skip = true;
-
-      for( auto p = cls. begin( ); p != it && !skip; ++ p )
-      {
-         if( equal( *p, *it ))
-            skip = true;
+   for( auto p = from. begin( ); p != from. end( ); ++ p )
+      for( auto q = into. begin( ); q != into. end( ); ++ q )
+      { 
+         if( p -> vars. size( ) == 0 && 
+             q -> vars. size( ) == 0 &&
+             inconflict( p -> body, q -> body ))
+         {
+            std::cout << "in conflict " << *p << " " << *q << "\n";
+            if( subsumes( from, p, into, q )) 
+            {
+               std::cout << "will simplify\n";
+               into. erase( q ); 
+               return true; 
+            }
+         }
       }
 
-      if( skip )
-         it = cls. erase( it );
-      else
-         ++ it;
-   }
+   return false;
 }
+
+
+bool 
+calc::rewrite( const simplifier::clause& from,
+               simplifier::clause& into )
+{
+   for( auto p = from. begin( ); p != from. end( ); ++ p )
+   {
+      if( p -> vars. size( ) == 0 &&
+          p -> body. sel( ) == logic::op_equals )
+      {
+         auto bin = p -> body. view_binary( );
+         auto rewr = logic::rewriterule( bin. sub1( ), bin. sub2( ));
+         std::cout << rewr << "\n";
+
+         for( auto q = into. begin( ); q != into. end( ); ++ q )
+         { 
+            *q = outermost( rewr, std::move(*q), 0 );
+            if( rewr. counter )
+            {
+               std::cout << "rewrote " << *q << "\n";
+               if( subsumes( from, p, into, q ))
+               {
+                  std::cout << "will simplify\n";
+                  return true; 
+               }
+            }
+         }
+      }
+   }
+
+   return false;
+}
+
+
+#if 0
 
 logic::term
 calc::disjunction( const clause& cls )
@@ -390,7 +393,6 @@ calc::disjunction( const clause& cls )
       kl. push_back( lit ); 
    return res;
 }
-#endif
 
 #endif
 
