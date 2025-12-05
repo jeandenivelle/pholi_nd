@@ -14,8 +14,9 @@ namespace calc
 
    struct simplifier
    {
+      using clause = disjunction< exists< logic::term >> ;
 
-      conjunction< disjunction< exists< logic::term >>> cnf;
+      conjunction< clause > cnf;
          // We accept existentially quantified terms, because one
          // could have simplifications of form
          // !A + exists( x1, ... xn, F ),  A => exists( x1, ... xn, F ).
@@ -71,23 +72,24 @@ namespace calc
       // Remove redundant literals, and direct equalities using
       // KBO.
   
-   // Make this a separate class?
- 
    bool 
-   subsumes( const exists< logic::term > & lit, 
-             const conjunction< disjunction< exists< logic::term >>> & cls,
-             conjunction< disjunction< exists< logic::term >>> :: const_iterator skip );
-
-   bool 
-   subsumes( const conjunction< disjunction< exists< logic::term >>> & cls1,
-             conjunction< disjunction< exists< logic::term >>> :: const_iterator skip1,
-             const conjunction< disjunction< exists< logic::term >>> & cls2,
-             conjunction< disjunction< exists< logic::term >>> :: const_iterator skip2 );
+   subsumes( const simplifier::clause & cls1,
+             simplifier::clause::const_iterator skip1,
+             const simplifier::clause & cls2,
+             simplifier::clause::const_iterator skip2 );
 
       // True if cls1 \ skip1 is a subset of cls2 \ skip2.
+      // If you want the full clause, use end( ).
+
+   // True if it happened:
+ 
+   bool 
+   rewrite( const simplifier::clause & from, simplifier::clause & into );
+
+   bool
+   resolve( const simplifier::clause & from, simplifier::clause & into );
 
 }
-
 
 #endif
 
