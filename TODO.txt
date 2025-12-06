@@ -1,0 +1,11 @@
+
+- The fake rule must type check the formula.
+- Consider creating a factor rule. This is a rule that would
+  replace ( A & B ) | C by ( A | C ) & ( B | C ).
+  It can be applied when C is small.
+- Consider adding subformula replacement. Originally it was core
+  of the resolution-based calculus. Now it seems irrelevant.
+
+
+
+

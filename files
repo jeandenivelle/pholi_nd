@@ -52,7 +52,7 @@
    optform.cpp
    proofchecking.cpp
    prefix.cpp
-   simplifier.cpp
+   reso.cpp
  
 %dir Source/semantics
 %sources

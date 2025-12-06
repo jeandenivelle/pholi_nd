@@ -11,7 +11,7 @@
 #include "localexpander.h"
 #include "outermost.h"
 #include "alternating.h"
-#include "simplifier.h"
+#include "reso.h"
 
 #include "printing.h"
 
@@ -644,7 +644,7 @@ calc::checkproof( const logic::beliefstate& blfs,
    case prf_simplify:
       {
          std::vector< forall< disjunction< exists< logic::term >>>> ignored;
-         simplifier simp;
+         conjunction< reso::clause > simp; 
 
          auto& last = seq. back( );
          for( auto& f : last )
@@ -652,13 +652,13 @@ calc::checkproof( const logic::beliefstate& blfs,
             if( f. vars. size( ))
                ignored. push_back( std::move(f));
             else
-               simp. cnf. append( std::move( f. body ));
+               simp. append( std::move( f. body ));
          }
   
          std::cout << simp << "\n";
  
 #if 0
-         auto form = proofcheck( simp. parent( ), seq, err );
+         auto form = proofcheck( prp. parent( ), seq, err );
 
          if( !form. has_value( ))
             return form;

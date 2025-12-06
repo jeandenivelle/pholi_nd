@@ -471,7 +471,7 @@ logic::kbo( const term& tm1, const term& tm2 )
 {
    weight_type w1 = weight( tm1 );
    weight_type w2 = weight( tm2 );
-   std::cout << w1 << " " << w2 << "\n";
+
    if( auto c = w1 <=> w2; !is_eq(c))
       return c;
 
