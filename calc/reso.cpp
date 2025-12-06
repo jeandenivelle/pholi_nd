@@ -141,6 +141,28 @@ bool calc::reso::trivially_true( const logic::term& tm )
    return false;
 }
 
+bool calc::reso::istruthconstant( const clause& cls )
+{
+   if( cls. size( ) != 1 )
+      return false;
+
+   auto p = cls. begin( );
+   return p -> vars. size( ) == 0 && p -> body. sel( ) == logic::op_true;
+}
+
+void calc::reso::maketruthconstant( clause& cls )
+{
+   if( cls. size( ) == 0 )
+      cls. append( exists( logic::term( logic::op_true )));
+   else
+   {
+      while( cls. size( ) > 1 )
+         cls. remove_last( );
+
+      cls. begin( ) -> body = logic::term( logic::op_true );
+      cls. begin( ) -> vars. clear( );
+   }
+}
 
 void calc::reso::simplify( clause& cls )
 {
@@ -157,9 +179,7 @@ void calc::reso::simplify( clause& cls )
 
       if( p1 -> vars. size( ) == 0 && trivially_true( p1 -> body ))
       {
-         *cls. begin( ) = exists( logic::term( logic::op_true ));
-         while( cls. size( ) > 1 )
-            cls. remove_last( );
+         maketruthconstant( cls );
          return;
       }
 
@@ -301,36 +321,42 @@ calc::reso::rewrite( const clause& from, clause& into )
 
 void calc::reso::simplify( conjunction< clause > & simp )
 {
-   for( auto& cls : simp )
-      simplify( cls );
 
    bool fixedpoint = false;
    while( !fixedpoint )
    {
       fixedpoint = true;
+
       for( auto from = simp. cbegin( ); from != simp. cend( ); ++ from )
       {
-         for( auto into = simp. begin( ); into != simp. end( ); ++ into )
+         if( !istruthconstant( *from ))  
          {
-            if( from != into )
+            for( auto into = simp. begin( ); into != simp. end( ); ++ into )
             {
-               if( rewrite( *from, *into ))
-               { 
-                  simplify( *into );
-                  std::cout << "rewrote " << *into << "\n";
-                  fixedpoint = false;
-               }
-
-               if( resolve( *from, *into ))
+               if( into != from && !istruthconstant( *into ))
                {
-                  simplify( *into );
-                  std::cout << "resolved " << *into << "\n";
-                  fixedpoint = false;
+                  if( subsumes( *from, from -> end( ),
+                                *into, into -> end( ) ))
+                  { 
+                     std::cout << "deleting " << *into << "\n";
+                     maketruthconstant( *into );
+                     fixedpoint = false;
+                  }
+                  else
+                  {
+                     if( resolve( *from, *into ) || rewrite( *from, *into ))
+                     {
+                        simplify( *into );  
+                        fixedpoint = false;
+                     }
+                  }
                }
             }
          }
       }
+
    }
+
 
 }
 

@@ -257,21 +257,17 @@ void tests::simplify( )
    calc::conjunction< calc::reso::clause > simp;
 
    auto cl1 = calc::disjunction( { 
-      calc::exists( ! "A"_unchecked ), 
-      calc::exists( ! "B"_unchecked ),
+      calc::exists( ! 0_db == 1_db ), 
       calc::exists( "A"_unchecked ),
-      calc::exists( {}, prop( "B"_unchecked )),
-      calc::exists( ! "B"_unchecked ),
-      calc::exists( {}, 2_db == 3_db ) } );
+      calc::exists( "B"_unchecked ) } );
 
    simp. append( cl1 );
 
    auto cl2 = calc::disjunction( { 
-      calc::exists( prop( "A"_unchecked )),
       calc::exists( {{ "aa", T }}, apply( "F"_unchecked,
-                { 0_db, 2_db, 2_db, 1_db } )),
+                { 1_db, 2_db, 2_db, 1_db } )),
       calc::exists( "B"_unchecked ),
-      calc::exists( prop( "C"_unchecked )) } );
+      calc::exists( prop( "B"_unchecked )) } );
 
    simp. append( cl2 );
 

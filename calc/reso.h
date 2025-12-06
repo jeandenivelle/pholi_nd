@@ -37,7 +37,13 @@ namespace calc
       bool trivially_true( const logic::term& tm );
          // Catches a few trivial cases:
          //    TRUE, ( t = t ), # t1 = t2, # # t, and # FALSE, # TRUE.
-               
+
+      bool istruthconstant( const clause& cls );
+         // True if cls equals { T }.
+
+      void maketruthconstant( clause& cls );
+         // Make cls equal to { T }.
+
       void simplify( clause& cls );
          // Remove redundant literals, and direct equalities using
          // KBO.
