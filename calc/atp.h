@@ -1,8 +1,8 @@
 
 // Written by Hans de Nivelle, December 2025.
 
-#ifndef CALC_RESO_
-#define CALC_RESO_
+#ifndef CALC_ATP_
+#define CALC_ATP_
 
 #include <iostream>
 
@@ -14,7 +14,7 @@
 namespace calc
 {
 
-   namespace reso 
+   namespace atp
    {
       using literal = exists< logic::term > ;
       using clause = disjunction< literal > ;
@@ -48,25 +48,19 @@ namespace calc
          // Remove redundant literals, and direct equalities using
          // KBO.
  
-      bool subsumes( const literal& lit,
-                     const clause& cls,
+      bool subsumes( const literal& lit, const clause& cls,
                      clause::const_iterator skip );
 
-      bool subsumes( const clause& cls1,
-                     clause::const_iterator skip1,
-                     const clause & cls2,
-                     clause::const_iterator skip2 );
+      bool subsumes( const clause& cls1, clause::const_iterator skip1,
+                     const clause& cls2, clause::const_iterator skip2 );
 
          // True if cls1 \ skip1 is a subset of cls2 \ skip2.
          // If you want the full clause, use end( ).
 
-
       // True if it happened:
  
       bool rewrite( const clause& from, clause& into );
-
-      bool
-      resolve( const clause& from, clause& into );
+      bool resolve( const clause& from, clause& into );
 
       void simplify( conjunction< clause > & simp );
          // This is the main function that should be called. 

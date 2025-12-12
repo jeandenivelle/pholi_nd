@@ -11,7 +11,7 @@
 #include "localexpander.h"
 #include "outermost.h"
 #include "alternating.h"
-#include "reso.h"
+#include "atp.h"
 
 #include "printing.h"
 
@@ -644,7 +644,7 @@ calc::checkproof( const logic::beliefstate& blfs,
    case prf_simplify:
       {
          std::vector< forall< disjunction< exists< logic::term >>>> ignored;
-         conjunction< reso::clause > simp; 
+         conjunction< atp::clause > simp; 
 
          auto& last = seq. back( );
          for( auto& f : last )

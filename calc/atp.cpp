@@ -1,5 +1,5 @@
 
-#include "reso.h"
+#include "atp.h"
 #include "outermost.h"
 
 #include "logic/cmp.h"
@@ -7,7 +7,7 @@
 
 
 std::pair< calc::prefix, const logic::term* > 
-calc::reso::decompose( const logic::term& tm )
+calc::atp::decompose( const logic::term& tm )
 {
    if( tm. sel( ) == logic::op_prop )
    {
@@ -54,11 +54,8 @@ calc::reso::decompose( const logic::term& tm )
 
 
 bool
-calc::reso::inconflict( const logic::term& tm1, const logic::term& tm2 )
+calc::atp::inconflict( const logic::term& tm1, const logic::term& tm2 )
 {
-   std::cout << "inconflict ";
-   std::cout << tm1 << "   " << tm2 << " ?\n";
-
    auto dec1 = decompose( tm1 );
    auto dec2 = decompose( tm2 );
 
@@ -73,7 +70,7 @@ calc::reso::inconflict( const logic::term& tm1, const logic::term& tm2 )
 
 
 bool
-calc::reso::subsumes( const logic::term& tm1, const logic::term& tm2 )
+calc::atp::subsumes( const logic::term& tm1, const logic::term& tm2 )
 {
    auto dec1 = decompose( tm1 );
    auto dec2 = decompose( tm2 );
@@ -89,11 +86,8 @@ calc::reso::subsumes( const logic::term& tm1, const logic::term& tm2 )
 
 
 bool
-calc::reso::subsumes( const literal& lit1, const literal& lit2 )
+calc::atp::subsumes( const literal& lit1, const literal& lit2 )
 {
-   std::cout << "subsumes ";
-   std::cout << lit1 << "   " << lit2 << "\n";
-
    if( lit1. vars. size( ) != lit2. vars. size( ))
       return false;
 
@@ -107,7 +101,7 @@ calc::reso::subsumes( const literal& lit1, const literal& lit2 )
 }
 
 
-bool calc::reso::trivially_true( const logic::term& tm )
+bool calc::atp::trivially_true( const logic::term& tm )
 {
    // Truth constant:
 
@@ -141,7 +135,7 @@ bool calc::reso::trivially_true( const logic::term& tm )
    return false;
 }
 
-bool calc::reso::istruthconstant( const clause& cls )
+bool calc::atp::istruthconstant( const clause& cls )
 {
    if( cls. size( ) != 1 )
       return false;
@@ -150,7 +144,7 @@ bool calc::reso::istruthconstant( const clause& cls )
    return p -> vars. size( ) == 0 && p -> body. sel( ) == logic::op_true;
 }
 
-void calc::reso::maketruthconstant( clause& cls )
+void calc::atp::maketruthconstant( clause& cls )
 {
    if( cls. size( ) == 0 )
       cls. append( exists( logic::term( logic::op_true )));
@@ -164,7 +158,7 @@ void calc::reso::maketruthconstant( clause& cls )
    }
 }
 
-void calc::reso::simplify( clause& cls )
+void calc::atp::simplify( clause& cls )
 {
    auto p1 = cls. begin( );
    auto p2 = cls. begin( );
@@ -172,8 +166,6 @@ void calc::reso::simplify( clause& cls )
 
    while( p1 != cls. end( ))
    {
-      std::cout << "looking at " << *p1 << "\n";
-
       // If *p1 is trivially true, we replace the clause by 
       // { TRUE }:
 
@@ -209,8 +201,6 @@ void calc::reso::simplify( clause& cls )
             goto skip;
       }
 
-      std::cout << "keeping " << *p1 << "\n";
-
       // Check if *p1 is an equality that needs to be flipped.
       // We also flip inside exists, even when it is useless:
 
@@ -238,8 +228,8 @@ void calc::reso::simplify( clause& cls )
 
 
 bool 
-calc::reso::subsumes( const literal& lit, const clause& cls,
-                      clause::const_iterator skip )
+calc::atp::subsumes( const literal& lit, const clause& cls,
+                     clause::const_iterator skip )
 {
    for( auto q = cls. begin( ); q != cls. end( ); ++ q )
    {
@@ -251,8 +241,8 @@ calc::reso::subsumes( const literal& lit, const clause& cls,
 }
 
 bool 
-calc::reso::subsumes( const clause& cls1, clause::const_iterator skip1,
-                      const clause& cls2, clause::const_iterator skip2 )
+calc::atp::subsumes( const clause& cls1, clause::const_iterator skip1,
+                     const clause& cls2, clause::const_iterator skip2 )
 {
    for( auto p1 = cls1. begin( ); p1 != cls1. end( ); ++ p1 )
    {
@@ -263,31 +253,31 @@ calc::reso::subsumes( const clause& cls1, clause::const_iterator skip1,
 }
 
 bool 
-calc::reso::resolve( const clause& from, clause& into )
+calc::atp::resolve( const clause& from, clause& into )
 {
-   for( auto p = from. begin( ); p != from. end( ); ++ p )
+   for( auto p = from. begin( ); p != from. end( ); ++ p ) 
+   {
       for( auto q = into. begin( ); q != into. end( ); ++ q )
       { 
          if( p -> vars. size( ) == 0 && 
              q -> vars. size( ) == 0 &&
              inconflict( p -> body, q -> body ))
          {
-            std::cout << "in conflict " << *p << " " << *q << "\n";
             if( subsumes( from, p, into, q )) 
             {
-               std::cout << "will simplify\n";
                into. erase( q ); 
                return true; 
             }
          }
       }
+   }
 
    return false;
 }
 
 
 bool 
-calc::reso::rewrite( const clause& from, clause& into )
+calc::atp::rewrite( const clause& from, clause& into )
 {
    for( auto p = from. begin( ); p != from. end( ); ++ p )
    {
@@ -298,18 +288,14 @@ calc::reso::rewrite( const clause& from, clause& into )
       {
          auto bin = p -> body. view_binary( );
          auto rewr = logic::rewriterule( bin. sub1( ), bin. sub2( ));
-         std::cout << rewr << "\n";
 
          for( auto q = into. begin( ); q != into. end( ); ++ q )
          { 
             *q = outermost( rewr, std::move(*q), 0 );
             if( rewr. counter )
             {
-               std::cout << "rewrote " << *q << "\n";
                if( subsumes( from, p, into, q ))
-               {
                   return true; 
-               }
             }
          }
       }
@@ -319,9 +305,18 @@ calc::reso::rewrite( const clause& from, clause& into )
 }
 
 
-void calc::reso::simplify( conjunction< clause > & simp )
+void calc::atp::simplify( conjunction< clause > & simp )
 {
+   std::cout << "starting full simplification\n";
 
+   for( auto s = simp. begin( ); s != simp. end( ); ++ s )
+      simplify( *s );
+
+   std::cout << "after clausewise simplification:\n";
+   for( const auto& cl : simp )
+      std::cout << "   " << cl << "\n";
+   std::cout << "\n";
+ 
    bool fixedpoint = false;
    while( !fixedpoint )
    {
@@ -331,6 +326,7 @@ void calc::reso::simplify( conjunction< clause > & simp )
       {
          if( !istruthconstant( *from ))  
          {
+            std::cout << "picked: " << *from << "\n";
             for( auto into = simp. begin( ); into != simp. end( ); ++ into )
             {
                if( into != from && !istruthconstant( *into ))
@@ -338,7 +334,7 @@ void calc::reso::simplify( conjunction< clause > & simp )
                   if( subsumes( *from, from -> end( ),
                                 *into, into -> end( ) ))
                   { 
-                     std::cout << "deleting " << *into << "\n";
+                     std::cout << "deleting: " << *into << "\n";
                      maketruthconstant( *into );
                      fixedpoint = false;
                   }
@@ -346,7 +342,9 @@ void calc::reso::simplify( conjunction< clause > & simp )
                   {
                      if( resolve( *from, *into ) || rewrite( *from, *into ))
                      {
+                        std::cout << "   resolved or rewrote: " << *into << "\n";
                         simplify( *into );  
+                        std::cout << "   simplified: " << *into << "\n";
                         fixedpoint = false;
                      }
                   }
@@ -357,7 +355,24 @@ void calc::reso::simplify( conjunction< clause > & simp )
 
    }
 
+   // We remove the clauses that were replaced by { TRUE }:
 
+   auto p1 = simp. begin( );
+   auto p2 = simp. cbegin( );
+   while( p2 != simp. cend( ))
+   {
+      if( !istruthconstant( *p2 ))
+      {
+         if( p1 != p2 )
+            *p1 = std::move( *p2 );
+         ++ p1; 
+      }
+      
+      ++ p2;       
+   }
+
+   while( p1 != simp. end( ))
+      simp. remove_last( );
 }
 
 

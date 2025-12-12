@@ -22,7 +22,7 @@ namespace calc
 
       void append( F f ) { disj. push_back( std::move(f)); }
       void remove_last( ) { disj. pop_back( ); }
-         // We are order sensitive.
+         // We are order aware.
  
       using iterator = std::vector<F> :: iterator;
       using const_iterator = std::vector<F> :: const_iterator;
@@ -68,7 +68,7 @@ namespace calc
 
       void append( F f ) { conj. push_back( std::move(f)); }
       void remove_last( ) { conj. pop_back( ); } 
-         // We are order sensitive.
+         // We are order aware.
 
       using iterator = std::vector<F> :: iterator;
       using const_iterator = std::vector<F> :: const_iterator;

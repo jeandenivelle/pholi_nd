@@ -14,7 +14,7 @@
 #include "calc/expander.h"
 #include "calc/projection.h"
 #include "calc/proofoperators.h"
-#include "calc/reso.h"
+#include "calc/atp.h"
 
 #include "semantics/interpretation.h"
 
@@ -254,61 +254,34 @@ void tests::simplify( )
    type O2O = type( type_func, O, { O } );
    type OT2O = type( type_func, O, { O, T } );
 
-   calc::conjunction< calc::reso::clause > simp;
+   calc::conjunction< calc::atp::clause > simp;
 
    auto cl1 = calc::disjunction( { 
-      calc::exists( ! 0_db == 1_db ), 
+      calc::exists( 10_db == 11_db ), 
       calc::exists( "A"_unchecked ),
       calc::exists( "B"_unchecked ) } );
 
    simp. append( cl1 );
 
    auto cl2 = calc::disjunction( { 
-      calc::exists( {{ "aa", T }}, apply( "F"_unchecked,
-                { 1_db, 2_db, 2_db, 1_db } )),
+      calc::exists( 11_db == 12_db ),
       calc::exists( "B"_unchecked ),
-      calc::exists( prop( "B"_unchecked )) } );
+      calc::exists( "A"_unchecked ) } );
 
    simp. append( cl2 );
 
-   std::cout << cl1 << "\n";
-   // std::cout << cl2 << "\n";
-
    auto cl3 = calc::disjunction( { 
-      calc::exists( "b1"_unchecked == "b2"_unchecked ),
-      calc::exists( "S"_unchecked ) } );
+      calc::exists( {{ "x", O }}, ! ( 11_db == 13_db )),
+      calc::exists( "B"_unchecked ),
+      calc::exists( "A"_unchecked ) } );
 
    simp. append( cl3 );
 
-   auto cl4 = calc::disjunction( {
-      calc::exists( "b2"_unchecked == "b3"_unchecked ), 
-      calc::exists( "S"_unchecked ) } );
-
-   simp. append( cl4 );
-
-   auto cl5 = calc::disjunction( { 
-      calc::exists( ! "R"_unchecked ) } );
-
-   simp. append( cl5 );
-
-   auto cl6 = calc::disjunction( { 
-      calc::exists( ! prop( "C"_unchecked )), 
-      calc::exists("B"_unchecked ) } );
-
-   simp. append( cl6 );
    std::cout << simp << "\n";
-
-   calc::reso::simplify( simp );
+   calc::atp::simplify( simp );
+   std::cout << "\n";
+   std::cout << "after simplification\n";
    std::cout << simp << "\n";
-
-#if 0
-   calc::clauseset cls;
-   cls. insert( conj );
-   std::cout << cls << "\n";
-   cls. fully_simplify( );
-   std::cout << cls << "\n";
-   std::cout << cls. getformula( ) << "\n";
-#endif
 
 }
 
