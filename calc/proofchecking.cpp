@@ -270,8 +270,6 @@ calc::checkproof( const logic::beliefstate& blfs,
    case prf_chain:
       {
          auto ch = prf. view_chain( );
-         size_t ss = seq. ctxt. size( );
-         // size_t nrforms = seq. nrforms( );
 
          for( size_t i = 0; i != ch. size( ); ++ i )
          {
@@ -279,12 +277,8 @@ calc::checkproof( const logic::beliefstate& blfs,
             checkproof( blfs, step, seq, err );
             ch. update_step( i, std::move( step ));
          } 
-         std::cout << "chain is crashing:\n\n"; 
-         seq. ugly( std::cout );
 
-         // A chain becomes equal to its last formula.
-
-         throw std::runtime_error( "still no clue what to do of course" );
+         return; 
       }
 #if 0
    case prf_expand:
@@ -655,20 +649,23 @@ calc::checkproof( const logic::beliefstate& blfs,
                simp. append( std::move( f. body ));
          }
   
-         std::cout << simp << "\n";
+         std::cout << "before simplification: " << simp << "\n";
+         std::cout << "ignoring\n";
+         for( const auto& ig : ignored )
+            std::cout << "   " << ig << "\n"; 
+         atp::simplify( simp );
+
+         std::cout << "after simplification: " << simp << "\n";
+
+         seq. back( ). clear( );
+         for( auto& ig : ignored )
+            seq. back( ). push( std::move(ig) );
+
+         for( auto& s : simp )
+            seq. back( ). push( forall( std::move(s)) );
+
+         return;
  
-#if 0
-         auto form = proofcheck( prp. parent( ), seq, err );
-
-         if( !form. has_value( ))
-            return form;
-
-         clauseset set;
-         set. insert( form. value( ));
-         set. fully_simplify( );
-         return set. getformula( );
-#endif
-         throw std::logic_error( "that was simplify" ); 
       }
 #if 0
    case prf_fake:

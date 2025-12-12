@@ -59,6 +59,10 @@ namespace calc
             // for copying or processing.
 
          void pop( );
+
+         void clear( ) 
+            { stack. clear( ); }    // Forget about everything.
+
       };
 
        
