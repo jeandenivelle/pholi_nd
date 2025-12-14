@@ -4,7 +4,7 @@
 
 #include "logic/context.h"
 #include "logic/term.h"
-#include "logic/inspections.h"
+#include "logic/counters.h"
 
 namespace calc
 {

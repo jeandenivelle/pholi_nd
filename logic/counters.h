@@ -1,8 +1,8 @@
 
 // Written by Hans de Nivelle, Dec. 2024.
 
-#ifndef LOGIC_INSPECTIONS_
-#define LOGIC_INSPECTIONS_
+#ifndef LOGIC_COUNTERS_
+#define LOGIC_COUNTERS_
 
 #include "term.h"
 #include <map>
@@ -18,8 +18,9 @@ namespace logic
       requires( F f, term t, size_t d )
          { { f( t, d ) } -> std::same_as< void > ; };
 
+
    template< counter C >
-   void count( C& counter, const term& t, size_t vardepth )
+   void traverse( C& counter, const term& t, size_t vardepth )
    {
       counter( t, vardepth );
 
@@ -37,7 +38,7 @@ namespace logic
       case op_prop:
          {
             auto un = t. view_unary( );
-            count( counter, un. sub( ), vardepth );
+            traverse( counter, un. sub( ), vardepth );
          }
          return;
 
@@ -51,8 +52,8 @@ namespace logic
       case op_equals:
          {
             auto bin = t. view_binary( );
-            count( counter, bin. sub1( ), vardepth );
-            count( counter, bin. sub2( ), vardepth );
+            traverse( counter, bin. sub1( ), vardepth );
+            traverse( counter, bin. sub2( ), vardepth );
          }
          return;
 
@@ -61,7 +62,7 @@ namespace logic
          {
             auto kl = t. view_kleene( );
             for( size_t i = 0; i != kl. size( ); ++ i )
-               count( counter, kl. sub(i), vardepth );
+               traverse( counter, kl. sub(i), vardepth );
          }
          return;
 
@@ -71,23 +72,23 @@ namespace logic
       case op_kleene_exists:
          {
             auto q = t. view_quant( ); 
-            count( counter, q. body( ), vardepth + q. size( ));
+            traverse( counter, q. body( ), vardepth + q. size( ));
          }
          return;
 
       case op_apply:
          {
             auto ap = t. view_apply( );
-            count( counter, ap. func( ), vardepth );
+            traverse( counter, ap. func( ), vardepth );
             for( size_t i = 0; i != ap. size( ); ++ i )
-               count( counter, ap. arg(i), vardepth );
+               traverse( counter, ap. arg(i), vardepth );
          }
          return;
 
       case op_lambda:
          {
             auto lam = t. view_lambda( );
-            count( counter, lam. body( ), vardepth + lam. size( ));
+            traverse( counter, lam. body( ), vardepth + lam. size( ));
          }
          return; 
       }
@@ -97,27 +98,30 @@ namespace logic
    }
 
 
-   struct debruijn_counter
+   class debruijn_counter
    {
       std::map< size_t, size_t > occ;
          // It must be an ordered map. We use the debruijn counter 
          // to introduce a new predicate for a subformula, and we want 
-         // the variables to be ordered in this predicate in the same 
+         // the variables in this predicated to be ordered in the same 
          // order as they were quantified in the surrounding scope. 
 
+   public:
       void operator( ) ( const term& t, size_t vardepth );
 
       debruijn_counter( ) = default;
       debruijn_counter( debruijn_counter&& ) = default;
       debruijn_counter& operator = ( debruijn_counter&& ) = default;
-         // Blocking accidental copying.
+         // Preventing accidental copying.
 
       size_t size( ) const { return occ. size( ); }
-      using const_iterator = 
-            std::map< size_t, size_t > :: const_iterator;
+
+      using const_iterator = std::map< size_t, size_t > :: const_iterator;
 
       const_iterator begin( ) const { return occ. begin( ); }
       const_iterator end( ) const { return occ. end( ); }
+
+      bool contains( size_t v ) const { return occ. contains(v); }
 
       void print( std::ostream& out ) const;
    };
@@ -126,7 +130,7 @@ namespace logic
    inline debruijn_counter count_debruijn( const term& t )
    {
       debruijn_counter db;
-      count( db, t, 0 );
+      traverse( db, t, 0 );
       return db;
    }
 
@@ -154,7 +158,7 @@ namespace logic
    nearest_debruijn( const term& t, size_t upperbound )
    {
       auto near = debruijn_cmp( upperbound );
-      count( near, t, 0 );
+      traverse( near, t, 0 );
       return near. nearest;
    }
 

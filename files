@@ -27,7 +27,7 @@
    structdef.cpp
    beliefstate.cpp
    replacements.cpp
-   inspections.cpp
+   counters.cpp
    cmp.cpp
    context.cpp
    position.cpp

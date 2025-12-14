@@ -1,5 +1,5 @@
 
-#include "inspections.h"
+#include "counters.h"
 
 void 
 logic::debruijn_counter::operator( ) ( const term& t, size_t vardepth )

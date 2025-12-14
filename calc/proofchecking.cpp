@@ -3,24 +3,21 @@
 
 #include "logic/pretty.h"
 #include "logic/replacements.h"
+#include "logic/counters.h"
 #include "logic/structural.h"
 #include "logic/cmp.h"
-#include "logic/inspections.h"
+#include "logic/counters.h"
 
 #include "expander.h"
 #include "localexpander.h"
 #include "outermost.h"
+#include "traverse.h"
 #include "alternating.h"
 #include "atp.h"
 
 #include "printing.h"
 
-
-void 
-calc::normalize( forall< disjunction< exists< logic::term >>> & cls );
-
-// This is a very bad case of bloated implementation, 
-// which should be looked at from the programming language point of view. 
+#include "logic/termoperators.h"
 
 auto 
 calc::lift( forall< disjunction< exists< logic::term >>> cls, size_t dist )
@@ -36,6 +33,8 @@ calc::lift( forall< disjunction< exists< logic::term >>> cls, size_t dist )
       return cls; 
 }
 
+// This is a very bad case of a bloated implementation, 
+// which should be looked at from the programming language point of view. 
 
 bool calc::istautology( const logic::term& disj ) 
 {
@@ -56,7 +55,7 @@ bool calc::istautology( const logic::term& disj )
       }
    }
 
-   // this is of course entirely ridiculous, but it is an exercise
+   // This is of course entirely ridiculous, but it is an exercise
    // in coding too:
 
    for( size_t i = 0; i != kl. size( ); ++ i )
@@ -157,31 +156,36 @@ calc::checkproof( const logic::beliefstate& blfs,
    case prf_orexistselim:
       {
          auto elim = prf. view_orexistselim( ); 
-         seq. ugly( std::cout );
          auto mainform = std::move( seq. back( ). get(0));
             // Should be a universally quantified disjunction,
             // without variables.
 
          seq. back( ). pop( );
 
-         std::cout << "mainform = " << mainform << "\n\n";
          if( mainform. vars. size( ))
          {
+            std::cout << "orexistselim\n";
             throw std::runtime_error( "there are universal variables" );
          }
 
          const dnf< logic::term > disj = std::move( mainform. body );
-            // A disjunction of existentials:
+            // It is a disjunction of existential formulas. 
 
+         const dnf< logic::term > result;
+            // This will be our result.
+
+         size_t ss = seq. ctxt. size( ); 
          size_t nrlevels = seq. size( );
 
          if( disj. size( ) < elim. size( ))
+         {
             std::cout << "CRASH IS IMMINENT\n";
+            throw std::runtime_error( "disjunction is too small" );
+         }
 
          for( size_t i = 0; i != elim. size( ); ++ i )
          {
             const auto& sub = disj. at(i);
-            std::cout << "sub = " << sub << "\n"; 
  
             // Assume the existential variables:
  
@@ -197,18 +201,60 @@ calc::checkproof( const logic::beliefstate& blfs,
             checkproof( blfs, subproof, seq, err );
             elim. update_branch( i, std::move( subproof ));
 
-            std::cout << "============================\n";
+            std::cout << "==============================\n";
+            std::cout << "disjunction is " << disj << "\n";
+            std::cout << "number options = " << disj. size( ) << "\n";
+            std::cout << "choice was: " << i << "\n";
+
+            seq. assume( "hhhh", logic::type( logic::type_form ));
+            seq. assume( "ssss", logic::type( logic::type_obj ));
+
             seq. ugly( std::cout );  
             std::cout << "\n";
 
+            // We use the last formula. If there is no, it is an error.
+
+            if( seq. back( ). size( ) == 0 )
+            {
+               throw std::runtime_error( "orexistselim: No result" );
+            }
+
+            auto res = std::move( seq. back( ). get(0));
+
+            if( res. vars. size( ))
+            {
+               throw std::runtime_error( "orexistselim: universal variables" );
+            }
+ 
+            res. body = disjunction( 
+               {
+                  exists(0_db), exists(2_db) 
+               } );
+
+            std::cout << "res = " << res << "\n";
+            std::cout << "ss = " << ss << "\n";
+
+            logic::debruijn_counter vars;
+            traverse( vars, res, 0 );
+            std::cout << vars << "\n";
+
+            logic::sparse_subst subst;
+            size_t db = 0;
+            for( size_t v = 0; v + ss < seq. ctxt. size( ); ++ v )
+            {
+               std::cout << v << "\n";
+               if( vars. contains(v))
+               {
+                  subst. assign( v, logic::term( logic::op_debruijn, db ));
+                  ++ db;
+               }
+            }
+ 
+            std::cout << subst << "\n"; 
+
+            
 #if 0
          bool success = true;
-
-            {
-               auto sub = optform( kl. sub(i), "or-elim", seq, err );
-               sub. make_anf2( );
-               seq. assume( elim. name(i), sub. value( ));
-            }
 
             auto res = optform( proofcheck( elim. branch(i), seq, err ),
                                 "option in or-elim", seq, err );
@@ -230,6 +276,8 @@ calc::checkproof( const logic::beliefstate& blfs,
 #endif
             while( seq. size( ) > nrlevels )
                seq. pop_back( );
+
+            throw std::logic_error( "restore the sequent" );
          }
          if( disj. size( ) > elim. size( ))
             std::cout << "REST MUST BE COPIED\n";
@@ -358,11 +406,9 @@ calc::checkproof( const logic::beliefstate& blfs,
          {
             if( seq. at( lev ). name == lft. level( ))
             { 
-               std::cout << "it was found!\n";
                if( lft. ind( ) < seq. at( lev ). stack. size( ))
                {
                   auto fm = seq. at( lev ). stack[ lft. ind( ) ];
-                  std::cout << "here it is " << fm << "\n"; 
                   seq. back( ). push( lift( std::move(fm),
                                       seq. ctxt. size( ) -
                                       seq. at( lev ). contextsize ));
@@ -648,14 +694,18 @@ calc::checkproof( const logic::beliefstate& blfs,
             else
                simp. append( std::move( f. body ));
          }
-  
+ 
+#if 0 
          std::cout << "before simplification: " << simp << "\n";
          std::cout << "ignoring\n";
          for( const auto& ig : ignored )
             std::cout << "   " << ig << "\n"; 
+#endif
          atp::simplify( simp );
 
+#if 0
          std::cout << "after simplification: " << simp << "\n";
+#endif
 
          seq. back( ). clear( );
          for( auto& ig : ignored )
@@ -665,17 +715,17 @@ calc::checkproof( const logic::beliefstate& blfs,
             seq. back( ). push( forall( std::move(s)) );
 
          return;
- 
-      }
-#if 0
-   case prf_fake:
-      {
-         auto res = optform( prf. view_fake( ). goal( ), "fake", seq, err );
-         res. make_anf2( );
-         res. fake( ); 
-         return res. value( ); 
       }
 
+   case prf_fake:
+      {
+         auto res = prf. view_fake( ). goal( );
+         auto cls = disjunction( { exists( std::move(res) ) } ); 
+         seq. back( ). push( forall( std::move( cls ))); 
+         return;
+      }
+
+#if 0
    case prf_show:
       {
          auto show = prf. view_show( ); 

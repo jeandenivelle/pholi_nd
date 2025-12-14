@@ -1,6 +1,6 @@
 
 #include "cmp.h"
-#include "inspections.h"
+#include "counters.h"
 
 logic::weight_type logic::weight( const type& tp )
 {
@@ -63,7 +63,7 @@ logic::weight_type logic::weight( const term& t )
 {
    weight_counter cnt;
 
-   count( cnt, t, 0 );
+   traverse( cnt, t, 0 );
    return cnt. val; 
 }
 

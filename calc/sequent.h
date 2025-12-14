@@ -18,9 +18,6 @@
 namespace calc
 {
  
-   // Sequent is not a complete class. It is more like a view
-   // into a beliefstate.
-
    struct sequent
    {
 
@@ -63,6 +60,7 @@ namespace calc
          void clear( ) 
             { stack. clear( ); }    // Forget about everything.
 
+         size_t size( ) const { return stack. size( ); } 
       };
 
        
@@ -97,6 +95,7 @@ namespace calc
 
       void push_back( std::string name );
       void pop_back( );
+         // Add or remove a level.
 
       const level& back( ) const;
       level& back( );

@@ -10,6 +10,8 @@
 
 namespace calc
 {
+
+   // const, non-const:
  
    template< logic::replacement R, typename F >
    disjunction<F> 

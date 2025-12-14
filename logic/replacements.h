@@ -92,6 +92,7 @@ namespace logic
       term operator( ) ( term t, size_t vardepth, bool& change ) const;
       void print( std::ostream& out ) const;
    };
+
     
    // A fullsubst completely removes the nearest DeBruijn indices 
    // #0,#1,#2, ... 
