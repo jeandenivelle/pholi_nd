@@ -197,7 +197,6 @@ logic::argsubst::operator( ) ( term t, size_t vardepth, bool& change ) const
 void logic::argsubst::print( std::ostream& out ) const
 {
    out << "Argument Substitution:\n";
-   std::cout << arity << "\n";
    for( size_t i = 0; i < arity; ++ i )
    {
       out << "   #" << (ssize_t)(1 + i) - (ssize_t)arity << " := ";
@@ -205,6 +204,50 @@ void logic::argsubst::print( std::ostream& out ) const
    }
 }
 
+
+logic::term
+logic::normalizer::operator( ) ( term t, size_t vardepth, bool& change ) const
+{
+   // std::cout << t << " / " << vardepth << "\n";
+
+   if( t. sel( ) == op_debruijn )
+   {  
+      size_t ind = t. view_debruijn( ). index( );
+      if( ind >= vardepth )
+      {
+         change = true; 
+         ind -= vardepth;
+
+         if( ind < border )
+         {
+            // Promises O( log( used. size( )) ) complexity:
+
+            auto p = std::lower_bound( used. begin( ), used. end( ), ind );
+            if( p == used. end( ) || *p != ind )
+               throw std::logic_error( "normalizer: variable not found" );
+
+            ind = p - used. begin( ); 
+         }
+         else
+         {
+            ind += ( used. size( ) - border );
+         }
+
+         return term( op_debruijn, ind + vardepth ); 
+      }
+   }
+   return t; 
+}
+
+
+void logic::normalizer::print( std::ostream& out ) const
+{
+   out << "Normalizer(" << border << "):\n";
+   for( size_t i = 0; i < used. size( ); ++ i )
+   {
+      out << "   #" << used[i] << " := #" << i << "\n"; 
+   }
+}
 
 logic::term 
 logic::betareduction::operator( ) ( term t, size_t vardepth, bool& change ) 
@@ -222,7 +265,7 @@ logic::betareduction::operator( ) ( term t, size_t vardepth, bool& change )
          if( lamb. size( ) > appl. size( ))
          {
             throw std::logic_error( 
-                          "not enough arguments in lambda-application" );
+                          "too few arguments in lambda-application" );
          }
 
          argsubst subst( t, lamb. size( ));

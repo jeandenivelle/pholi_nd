@@ -57,6 +57,7 @@ namespace logic
    // necessarily all, De Bruijn indices. 
    // Variables that are not in the domain of the substitution,
    // are not changed.
+   // It is currently not used.
 
    class sparse_subst
    {
@@ -115,7 +116,7 @@ namespace logic
       void print( std::ostream& out ) const;
 
       size_t size( ) const { return values. size( ); } 
-      void push( term val ) { values. push_back( std::move( val )); }
+      void append( term val ) { values. push_back( std::move( val )); }
    };
 
    // Argument substitution works like fullsubst, but it uses
@@ -141,6 +142,39 @@ namespace logic
       void print( std::ostream& out ) const;
    };
 
+   // A normalizer normalizes De Bruijn indices. 
+   // This is needed if you want to move a term to another context
+   // that assumes only De Bruijn indices that occurring in the term.
+   // For example, you have p( #0, #2, #3 ) in a context 
+   // ( O2T, T, O, T2O ). (with #0 at the end).  
+   // You want to put p( #0, #2, #3 ) in a modified context
+   // where only #0 and #2, #3 are assumed.
+   // In that case, you need p( #0, #1, #2 ) in a context
+   // ( O2T, T, T2O ).
+   // We need a #0 -> #0, #2 -> #1. 
+   // #3 is outside of the affected context, but it still
+   // should be decreased by 1. 
+   // Below we would have values = { 0, 1 } and
+   // domain = 3.
+
+   class normalizer
+   {
+      std::vector< size_t > used;
+      size_t border;   // Supremum of affected indices.
+                       // Variables >= border will be decreased.
+
+   public:
+      normalizer( ) = delete;
+      normalizer( size_t border )
+         : border( border )
+      { }      
+
+      void append( size_t var ) { used. push_back( var ); }
+      term operator( ) ( term t, size_t vardepth, bool& change ) const;
+
+      void print( std::ostream& out ) const;        
+   };
+
 
    // This is incomplete beta-reduction:
 
@@ -153,7 +187,7 @@ namespace logic
       { }
 
       term operator( ) ( term t, size_t vardepth, bool& change );
-         // Not const, because we count the reductions.
+         // Not const method, because we count the reductions.
 
       void print( std::ostream& out ) const; 
    };

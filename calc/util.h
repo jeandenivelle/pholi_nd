@@ -22,12 +22,6 @@ namespace calc
       // The return term is the normalization of ff,
       // where the lowest DeBruin is mapped to #0, etc. 
 
-   logic::context 
-   restriction( const logic::context& ctxt, 
-                const logic::debruijn_counter& used ); 
-      // Restriction of ctxt to the used variables. 
-      // This function should be removed!!
-
    logic::term
    application( logic::term fm, const logic::debruijn_counter& vars );
       // Apply f on the domain of vars, from far to near. 

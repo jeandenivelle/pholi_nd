@@ -20,6 +20,13 @@ namespace calc
    }
 
    template< logic::counter C, typename F >
+   void traverse( C& counter, const conjunction<F> & conj, size_t vardepth )
+   {
+      for( const auto& f : conj )
+         traverse( counter, f, vardepth );
+   }
+
+   template< logic::counter C, typename F >
    void traverse( C& counter, const disjunction<F> & disj, size_t vardepth )
    {
       for( const auto& f : disj )

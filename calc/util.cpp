@@ -54,26 +54,6 @@ calc::norm_debruijns( logic::term ff )
    return std::pair( std::move( freevars ), std::move( ff ));
 }
 
-logic::context
-calc::restriction( const logic::context& ctxt, 
-                   const logic::debruijn_counter& used )
-{
-   throw std::runtime_error( "this function should not be used any more" );
-
-   // context look back from the end. Because of that, the
-   // highest De Bruijn variable comes first in the context.
-
-   logic::context res; 
-   for( auto it = used. end( ); it != used. begin( ); )
-   {
-      -- it;
-      size_t vv = it -> first;
-      res. append( ctxt. getname(vv), ctxt. gettype(vv) ); 
-   }
-
-   return res;
-}
-
 
 logic::term
 calc::application( logic::term fm, const logic::debruijn_counter& vars )

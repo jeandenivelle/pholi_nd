@@ -219,68 +219,94 @@ calc::checkproof( const logic::beliefstate& blfs,
                throw std::runtime_error( "orexistselim: No result" );
             }
 
-            auto res = std::move( seq. back( ). get(0));
+            auto concl = std::move( seq. back( ). get(0));
+               // Conclusion of our current assumption.
 
-            if( res. vars. size( ))
+            if( concl. vars. size( ))
             {
                throw std::runtime_error( "orexistselim: universal variables" );
             }
  
-            res. body = disjunction( 
+            concl. body = disjunction( 
                {
-                  exists(0_db), exists(2_db) 
+                  exists( logic::forall( {{ "A", logic::type( logic::type_form ) }}, apply( 5_db, { 3_db, 4_db } ))), 
+                  exists( {{ "X", logic::type( logic::type_form ) },
+                           { "Y", logic::type( logic::type_obj ) }},
+                          apply( "f"_unchecked, { 0_db, 1_db, 2_db, 5_db, 6_db, 7_db } ))
                } );
 
-            std::cout << "res = " << res << "\n";
+            std::cout << "concl = " << concl << "\n";
             std::cout << "ss = " << ss << "\n";
 
-            logic::debruijn_counter vars;
-            traverse( vars, res, 0 );
-            std::cout << vars << "\n";
+            // concl. body( ) is a disjunction of existentially
+            // quantified formulas. For each disjunct separately,
+            // we determine its free variables, and 
+            // add existential quantifiers for them.
 
-            logic::sparse_subst subst;
-            size_t db = 0;
-            for( size_t v = 0; v + ss < seq. ctxt. size( ); ++ v )
+            for( size_t i = 0; i != concl. body. size( ); ++ i )
             {
-               std::cout << v << "\n";
-               if( vars. contains(v))
-               {
-                  subst. assign( v, logic::term( logic::op_debruijn, db ));
-                  ++ db;
-               }
-            }
+               std::cout << "disjunct " << i << ":  ";
+               std::cout << concl. body. at(i) << "\n";
+
+               // We construct a substitution that normalizes
+               // the free variables in concl. body. at(i).
+
+               // In order to do that, we first collect 
+               // the free variables of concl. body. at(i) : 
  
-            std::cout << subst << "\n"; 
+               logic::debruijn_counter vars;
+               traverse( vars, concl. body. at(i), 0 );
 
-            
-#if 0
-         bool success = true;
+               // We don't care about all free variables, only about the 
+               // ones that we assumed by ourselves. 
+               // We go through our assumptions, check if they occur
+               // in vars. We create a normalizing subsitution for those. 
 
-            auto res = optform( proofcheck( elim. branch(i), seq, err ),
-                                "option in or-elim", seq, err );
-              
-            res. musthave( logic::op_kleene_and );
-            res. getuniquesub( );
-            res. musthave( logic::op_kleene_or );
+               auto norm = logic::normalizer( seq. ctxt. size( ) - ss );
 
-            if( !res )
-               success = false; 
-            else
-            {
-               auto disj = res. value( ). view_kleene( );
-               for( size_t i = 0; i != disj. size( ); ++ i )
-                  intro. push_back( disj. sub(i));  
+               for( size_t v = 0; v + ss < seq. ctxt. size( ); ++ v )
+               {
+                  if( vars. contains(v))
+                     norm. append(v);
+               }
+ 
+               std::cout << norm << "\n"; 
+
+               // apply norm on the body:
+
+               concl. body. at(i) = 
+                  outermost( norm, std::move( concl. body. at(i)), 0 );
+
+               std::vector< logic::vartype > quant;
+
+               // These are the assumptions that we are about to drop:
+
+               for( size_t v = seq. ctxt. size( ) - ss; v -- ; )
+               {
+                  if( vars. contains(v))
+                     quant. push_back( { seq. ctxt. getname(v),
+                                         seq. ctxt. gettype(v) } );                          
+               }
+
+               for( auto& q : concl. body. at(i). vars )
+                  quant. push_back( std::move(q));
+
+               concl. body. at(i). vars = std::move( quant );
             }
 
-            seq. restore( seqsize );
-#endif
-            while( seq. size( ) > nrlevels )
-               seq. pop_back( );
+            if( seq. size( ) != nrlevels + 1 )
+               throw std::logic_error( "something went wrong with the levels" );
 
-            throw std::logic_error( "restore the sequent" );
+            seq. pop_back( );
+            seq. ctxt. restore( ss );
+
+            seq. ugly( std::cout ); 
+
+            std::cout << "concl = " << concl << "\n";
+            throw std::logic_error( "restored the sequent" );
          }
          if( disj. size( ) > elim. size( ))
-            std::cout << "REST MUST BE COPIED\n";
+            throw std::logic_error( "REST MUST BE COPIED" );
 
 #if 0
          if( !success )
@@ -558,7 +584,7 @@ calc::checkproof( const logic::beliefstate& blfs,
             }
 
             elim. update_value( i, inst ); 
-            subst. push( std::move( inst ));
+            subst. append( std::move( inst ));
 
 #if 0
             logic::context ctxt;

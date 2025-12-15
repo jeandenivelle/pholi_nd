@@ -11,7 +11,8 @@
 namespace calc
 {
 
-   // const, non-const:
+   // Each function has non-const and const versions.
+   // That's why there are so many. 
  
    template< logic::replacement R, typename F >
    disjunction<F> 
