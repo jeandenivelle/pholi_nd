@@ -171,7 +171,7 @@ calc::checkproof( const logic::beliefstate& blfs,
          const dnf< logic::term > disj = std::move( mainform. body );
             // It is a disjunction of existential formulas. 
 
-         const dnf< logic::term > result;
+         dnf< logic::term > result;
             // This will be our result.
 
          size_t ss = seq. ctxt. size( ); 
@@ -226,7 +226,10 @@ calc::checkproof( const logic::beliefstate& blfs,
             {
                throw std::runtime_error( "orexistselim: universal variables" );
             }
- 
+
+            // concl is now a forall without variables, 
+            // containing a disjunction:
+
             concl. body = disjunction( 
                {
                   exists( logic::forall( {{ "A", logic::type( logic::type_form ) }}, apply( 5_db, { 3_db, 4_db } ))), 
@@ -300,20 +303,22 @@ calc::checkproof( const logic::beliefstate& blfs,
             seq. pop_back( );
             seq. ctxt. restore( ss );
 
-            seq. ugly( std::cout ); 
+            // concl still is a forall without variables:
 
-            std::cout << "concl = " << concl << "\n";
-            throw std::logic_error( "restored the sequent" );
+            for( auto& d : concl. body )
+               result. append( std::move(d));
          }
-         if( disj. size( ) > elim. size( ))
-            throw std::logic_error( "REST MUST BE COPIED" );
 
-#if 0
-         if( !success )
-            return { };
+         if( elim. size( ) < disj. size( ))
+         {
+            std::cout << elim. size( ) << " " << disj. size( ) << "\n";
 
-         return disjunction( intro );
-#endif
+            for( size_t i = elim. size( ); i < disj. size( ); ++ i )
+               result. append( std::move( disj. at(i)) );
+         }
+
+         std::cout << "RESULT IS " << result << "\n";
+
          throw std::runtime_error( "keine ahnung" );
       }
 
