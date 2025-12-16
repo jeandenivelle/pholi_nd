@@ -386,6 +386,8 @@ void tests::smallproofs( const logic::beliefstate& blfs, errorstack& err )
 
    if constexpr( true ) 
    {
+      // This proof was completed on 16 december 2025, 05.23 CET.
+
       auto id = identifier( ) + "resolve";
 
       const auto& f = blfs. getformulas( id );
@@ -408,7 +410,31 @@ void tests::smallproofs( const logic::beliefstate& blfs, errorstack& err )
                            chain( { proofterm( prf_lift, "xxx", 0 ),
                                     proofterm( prf_forallelim, { 0_db } ),
                                     prf_simplify } ),
-                           chain( { } ) } ) }
+                           chain( 
+                              { proofterm( prf_lift, "xxx", 1 ), 
+                                proofterm( prf_forallelim, { 0_db } ),
+                                prf_simplify
+                              } ),
+                           chain( { proofterm( prf_lift, "xxx", 0 ),
+                                    proofterm( prf_forallelim, { 0_db } ),
+                                    prf_simplify } ),
+                           chain(
+                              { proofterm( prf_lift, "xxx", 2 ),
+                                proofterm( prf_forallelim, { 0_db } ),
+                                prf_simplify
+                              } ),
+                            chain(
+                              { proofterm( prf_lift, "xxx", 1 ),
+                                proofterm( prf_forallelim, { 0_db } ),
+                                prf_simplify,
+                              } ),
+                            chain(
+                              { proofterm( prf_lift, "xxx", 2 ),
+                                proofterm( prf_forallelim, { 0_db } ),
+                                prf_simplify 
+                              } ) 
+                            } ),
+                           calc::show( "SHOULD BE EMPTY" ) }
                      ) } )  
               } ),
            chain( { prf_nop } ) } );
@@ -418,8 +444,10 @@ void tests::smallproofs( const logic::beliefstate& blfs, errorstack& err )
       prf. print( indentation( ), std::cout );
 
       checkproof( blfs, prf, seq, err );
+      std::cout << "\n";
+      std::cout << "FINAL STATE\n";
       seq. ugly( std::cout );
- 
+
 #if 0
       auto orelim2 = proofterm( prf_orelim,
                         proofterm( prf_forallelim,

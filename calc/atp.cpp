@@ -28,31 +28,6 @@ calc::atp::decompose( const logic::term& tm )
 }
 
 
-#if 0
-
-      else
-         ++ it;
-   }
-
-   // Then subsumed:
-
-   for( auto it = set. begin( ); it != set. end( ); ++ it )
-   {
-      auto p = set. begin( );
-      while( p != set. end( ))
-      {
-         if( p != it && subset( *it, it -> end( ), *p, p -> end( )))
-            p = set. erase(p);
-         else
-            ++ p;
-      }
-   }
-}
-
-
-#endif
-
-
 bool
 calc::atp::inconflict( const logic::term& tm1, const logic::term& tm2 )
 {
@@ -194,6 +169,8 @@ void calc::atp::simplify( clause& cls )
       }
 
       // Check if an earlier literal subsumes:
+      // (This approach has problem that in case of equivalent literals,
+      //  the latter is taken.)
 
       for( auto s = cls. begin( ); s != p2; ++ s )
       {
@@ -202,7 +179,7 @@ void calc::atp::simplify( clause& cls )
       }
 
       // Check if *p1 is an equality that needs to be flipped.
-      // We also flip inside exists, even when it is useless:
+      // We also flip inside an exists, even when it is useless:
 
       if( p1 -> body. sel( ) == logic::op_equals )
       {

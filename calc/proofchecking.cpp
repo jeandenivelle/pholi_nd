@@ -206,13 +206,18 @@ calc::checkproof( const logic::beliefstate& blfs,
             std::cout << "number options = " << disj. size( ) << "\n";
             std::cout << "choice was: " << i << "\n";
 
+#if 0
+            // Was part of testing. Should be completely removed later:
+
             seq. assume( "hhhh", logic::type( logic::type_form ));
             seq. assume( "ssss", logic::type( logic::type_obj ));
 
             seq. ugly( std::cout );  
             std::cout << "\n";
+#endif
 
-            // We use the last formula. If there is no, it is an error.
+            // We use the last formula. If there are no formulas, 
+            // it is an error:
 
             if( seq. back( ). size( ) == 0 )
             {
@@ -224,11 +229,15 @@ calc::checkproof( const logic::beliefstate& blfs,
 
             if( concl. vars. size( ))
             {
-               throw std::runtime_error( "orexistselim: universal variables" );
+               std::cout << concl << "\n";
+               throw std::runtime_error( "orexistselim: universal variables in conclusion" );
             }
 
             // concl is now a forall without variables, 
             // containing a disjunction:
+
+#if 0
+            // This was used for testing.
 
             concl. body = disjunction( 
                {
@@ -240,6 +249,7 @@ calc::checkproof( const logic::beliefstate& blfs,
 
             std::cout << "concl = " << concl << "\n";
             std::cout << "ss = " << ss << "\n";
+#endif
 
             // concl. body( ) is a disjunction of existentially
             // quantified formulas. For each disjunct separately,
@@ -248,9 +258,6 @@ calc::checkproof( const logic::beliefstate& blfs,
 
             for( size_t i = 0; i != concl. body. size( ); ++ i )
             {
-               std::cout << "disjunct " << i << ":  ";
-               std::cout << concl. body. at(i) << "\n";
-
                // We construct a substitution that normalizes
                // the free variables in concl. body. at(i).
 
@@ -273,8 +280,6 @@ calc::checkproof( const logic::beliefstate& blfs,
                      norm. append(v);
                }
  
-               std::cout << norm << "\n"; 
-
                // apply norm on the body:
 
                concl. body. at(i) = 
@@ -309,6 +314,9 @@ calc::checkproof( const logic::beliefstate& blfs,
                result. append( std::move(d));
          }
 
+         // If there are more disjunctions than cases in the proof,
+         // we copy the missing disjuncts unchanged:
+
          if( elim. size( ) < disj. size( ))
          {
             std::cout << elim. size( ) << " " << disj. size( ) << "\n";
@@ -317,9 +325,11 @@ calc::checkproof( const logic::beliefstate& blfs,
                result. append( std::move( disj. at(i)) );
          }
 
-         std::cout << "RESULT IS " << result << "\n";
+         atp::simplify( result );
 
-         throw std::runtime_error( "keine ahnung" );
+         seq. back( ). push( forall( std::move( result )));
+
+         return; 
       }
 
    case prf_propcut:
@@ -359,6 +369,7 @@ calc::checkproof( const logic::beliefstate& blfs,
 
          return; 
       }
+
 #if 0
    case prf_expand:
       {
@@ -756,28 +767,25 @@ calc::checkproof( const logic::beliefstate& blfs,
          return;
       }
 
-#if 0
+   case prf_nop:
+      {
+         return;   // Truly nothing was done. 
+      }
+
    case prf_show:
       {
          auto show = prf. view_show( ); 
-         auto res = proofcheck( show. prf( ), seq, err );
          for( short unsigned int i = 0; i < 70; ++ i )
             std::cout << '-';
          std::cout << "\n"; 
-         std::cout << "this is " << show. comment( ) << ":\n";
-         std::cout << seq << "\n";
-         if( res. has_value( ))
-         {
-            std::cout << "Deduced subformula:\n";
-            std::cout << "   ";
-            printing::pretty( std::cout, seq, res. value( ));
-         }
-         else
-            std::cout << "(proof failed)\n";
-         std::cout << "\n\n";
-         return res;
+         std::cout << "proof state " << show. comment( ) << ":\n";
+         seq. ugly( std::cout ); 
+         for( short unsigned int i = 0; i < 70; ++ i )
+            std::cout << '-'; 
+         std::cout << "\n\n"; 
+         return;
       } 
-#endif
+
    }
 
    std::cout << prf. sel( ) << "\n";

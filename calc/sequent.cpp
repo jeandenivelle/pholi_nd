@@ -2,14 +2,6 @@
 #include "sequent.h"
 #include "logic/pretty.h"
 
-#if 0
-void 
-calc::formula::ugly( std::ostream& out ) const
-{
-   out << form << "\n";
-}
-#endif
-
 
 auto calc::sequent::level::get( size_t ind ) const 
    -> const forall< disjunction< exists< logic::term >>> & 
@@ -174,8 +166,8 @@ void calc::sequent::ugly( std::ostream& out ) const
    {
       out << "   level " << l. name << ", ";
       out << "contextsize = " << l. contextsize << ":\n";
-      for( const auto& f : l. stack )
-         out << "      " << f << "\n"; 
+      for( size_t i = 0; i != l. stack. size( ); ++ i )
+         out << "      " << i << " : " << l. stack[i] << "\n";
    } 
 }
 
