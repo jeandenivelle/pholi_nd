@@ -447,82 +447,44 @@ void tests::smallproofs( const logic::beliefstate& blfs, errorstack& err )
       std::cout << "\n";
       std::cout << "FINAL STATE\n";
       seq. ugly( std::cout );
-
-#if 0
-      auto orelim2 = proofterm( prf_orelim,
-                        proofterm( prf_forallelim,
-                           proofterm( prf_ident, identifier( ) + "hyp0001" ), 1,
-                           { "z0001"_unchecked } ), 0,
-                     { { "ccc", proofterm( prf_simplify,
-                          proofterm( prf_andintro, 
-                          { proofterm( prf_ident, identifier( ) + "aaa0001" ),
-                            proofterm( prf_ident, identifier( ) + "ccc0001" ) } )) },
-                       { "ddd", proofterm( prf_simplify,
-                          proofterm( prf_andintro, 
-                          { proofterm( prf_ident, identifier( ) + "neg0001" ),
-                            proofterm( prf_ident, identifier( ) + "ddd0001" ) } )) }} );
-
-      auto orelim = proofterm( prf_orelim,
-                       proofterm( prf_forallelim,
-                          proofterm( prf_ident, identifier( ) + "hyp0001" ), 0,
-                          { "z0001"_unchecked } ), 0,
-                    { { "aaa", orelim2 },
-                      { "bbb",
-                         proofterm( prf_simplify,
-                            proofterm( prf_andintro,
-                               { proofterm( prf_ident, identifier( ) + "neg0001" ),
-                                 proofterm( prf_ident, identifier( ) + "bbb0001" ) } ))
-                           }} );
-
-      auto ref =
-         proofterm( prf_existselim, 
-            proofterm( prf_clausify,
-               proofterm( prf_ident, identifier( ) + "initial0001" )), 0, 
-            "hyp", proofterm( prf_existselim, 
-                      proofterm( prf_ident, identifier( ) + "hyp0001" ), 2,
-              "neg", orelim  ));
-
-      ref. print( indentation(0), std::cout );
-
-      auto ff = deduce( ref, seq, err );
-      if( ff. has_value( ))
-         std::cout << "proved this formula: " << ff. value( ) << "\n\n";
-
-      auto fake1 = proofterm( prf_fake, "hans"_unchecked );
-      auto fake2 = proofterm( prf_fake, "de"_unchecked ); 
-      auto fake3 = proofterm( prf_fake, "nivelle"_unchecked );
-      auto fake4 = proofterm( prf_fake, "hans"_unchecked == "jean"_unchecked );
-
-      ref = andintro( { fake1, fake2, fake3, fake4 } );
-
-      ref = proofterm( prf_cut, ref, "asm", 
-               proofterm( prf_select, proofterm( prf_ident, identifier( ) + "asm" ), {1} ));
-
-      ref. print( indentation(0), std::cout );
-   
-      ff = deduce( ref, seq, err );
-      if( ff. has_value( ))
-         std::cout << "proved this formula: " << ff. value( ) << "\n\n";
-#endif
    }
 
-#if 0
 
+   if constexpr( true )
    {
-      // second (or first) complete proof:
-
-#if 0
       auto id = identifier( ) + "minhomrel_succ";
 
       const auto& f = blfs. getformulas( id );
       std::cout << f. size( ) << "\n";
       if( f. size( ) != 1 )
          throw std::runtime_error( "cannot continue minhomrel_succ" );
-     
-      auto seq = sequent( blfs ); 
-      seq. assume( "goal", ! blfs. at( f. front( )). view_thm( ). frm( ));
-      std::cout << seq << "\n";
+    
+      auto seq = sequent( );
+      auto nr = seq. define( "goal",
+                             blfs. at( f. front( )). view_form( ). fm( ),
+                             logic::type( logic::type_form ));
 
+      seq. push_back( "goal" );
+      seq. ugly( std::cout );
+
+      auto splitprop = orexistselim( "prop",
+         {
+            chain( { calc::show( "NOTPROP" ) } ),
+            chain( { proofterm( prf_cut ), 
+                   orexistselim( "truth", 
+                   {
+                      chain( { calc::show( "NEGATED" ) } ), 
+                      chain( { calc::show( "GOAL" ) } )
+                   } ),
+                   calc::show( "PROP" ) } )
+         } );
+
+      auto prf = proofterm( prf_propcut, "goal"_unchecked );
+      prf = chain( { prf, splitprop } );
+      prf. print( indentation( ), std::cout );
+ 
+#if 0
+#if 0
       auto ref = clausify( "goal0001"_assumption ); 
 
       auto sub2 = "skolem0001"_assumption;
@@ -560,9 +522,13 @@ void tests::smallproofs( const logic::beliefstate& blfs, errorstack& err )
       else
          std::cout << "(proved nothing)\n\n";
 #endif
+#endif
+      checkproof( blfs, prf, seq, err );
+      std::cout << "\n";
+      std::cout << "FINAL STATE\n";
+      seq. ugly( std::cout );
 
    }
-#endif
 }
 
 

@@ -6,7 +6,8 @@
 
 %option propcut { prf_propcut } => fm : logic::term
 %option cut { prf_cut } =>    
-   // We eat a formula from the context.
+   // We eat a formula from the sequent, so we don't
+   // need an argument.
 
 %option chain { prf_chain } => [ step : proofterm ] 
 %option nop { prf_nop } => 
@@ -67,15 +68,9 @@
          out << ind << "propcut: " << view_propcut( ). fm( ) << "\n";
          return;
 
-     // case prf_cut:
-     //    {
-     //       out << ind << "cut:\n";
-     //       auto cut = view_cut( ); 
-     //       cut. first( ). print( ind + 3, out );
-     //       out << ind << "assumed as " << view_cut( ). name( ) << " in\n";
-     //       cut. second( ). print( ind + 3, out );
-     //       return;
-     //    }
+     case prf_cut:
+        out << ind << "cut\n"; 
+        return;
 
       case prf_chain: 
          {

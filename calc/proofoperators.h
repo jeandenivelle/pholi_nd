@@ -27,6 +27,10 @@ namespace calc
    expand( const std::string& label, size_t nr, const proofterm& prf )
       { return proofterm( prf_expand, identifier( ) + label, nr, prf ); }
 
+   inline proofterm
+   expandlocal( const std::string& label, size_t occ )
+      { return proofterm( prf_expandlocal, label, occ ); } 
+
    inline proofterm show( const std::string& label )
       { return proofterm( prf_show, label ); }
 

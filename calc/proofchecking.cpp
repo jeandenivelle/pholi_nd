@@ -356,6 +356,40 @@ calc::checkproof( const logic::beliefstate& blfs,
          return;
       }
 
+   case prf_cut:
+      {
+         auto cut = prf. view_cut( );
+
+         if( seq. back( ). size( ) == 0 )
+            throw std::runtime_error( "cut: There is no formula" );
+
+         auto fm = seq. back( ). get(0);
+            // We don't consume, because we expect to need
+            // Propness many times. 
+
+         if( fm. vars. size( ))
+            throw std::runtime_error( "cut: Formula has variables" );
+
+         if( fm. body. size( ) != 1 )
+            throw std::runtime_error( "cut: Formula not a fact" );
+
+         if( fm. body. at(0). vars. size( ))
+            throw std::runtime_error( "cut: Formula has existential variables" );
+         auto prp = std::move( fm. body. at(0). body );
+
+         if( prp. sel( ) != logic::op_prop )
+            throw std::runtime_error( "cut: Formula not prop" );
+
+         auto cutform = prp. view_unary( ). sub( );
+         std::cout << "cutform = " << cutform << "\n";
+         fm. body. at(0). body = logic::term( logic::op_not, cutform );
+         fm. body. append( exists( cutform ));
+ 
+         seq. back( ). push( std::move( fm ));
+         return;
+
+      }
+
    case prf_chain:
       {
          auto ch = prf. view_chain( );
@@ -500,24 +534,6 @@ calc::checkproof( const logic::beliefstate& blfs,
             val );
 
          res. value( ) = outermost( rewr, std::move( res. value( )), 0 );
-         seq. restore( seqsize );
-         return res;
-      }
-
-   case prf_cut:
-      {
-         auto cut = prf. view_cut( );
-
-         // We evaluate the first parent: 
-
-         auto first = proofcheck( cut. first( ), seq, err );
-         if( !first. has_value( ))
-            return { };
-
-         size_t seqsize = seq. size( );
-         seq. assume( cut. name( ), first. value( ));
-
-         auto res = proofcheck( cut. second( ), seq, err );
          seq. restore( seqsize );
          return res;
       }
