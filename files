@@ -49,7 +49,6 @@
    sequent.cpp
    proofterm.cpp
    printing.cpp
-   optform.cpp
    proofchecking.cpp
    prefix.cpp
    atp.cpp

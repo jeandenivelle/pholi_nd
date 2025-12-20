@@ -10,6 +10,7 @@
 
 #include "expander.h"
 #include "localexpander.h"
+#include "projection.h"
 #include "outermost.h"
 #include "traverse.h"
 #include "alternating.h"
@@ -33,74 +34,23 @@ calc::lift( forall< disjunction< exists< logic::term >>> cls, size_t dist )
       return cls; 
 }
 
-// This is a very bad case of a bloated implementation, 
-// which should be looked at from the programming language point of view. 
-
-bool calc::istautology( const logic::term& disj ) 
+void
+calc::pibeta( const logic::beliefstate& blfs,
+              forall< disjunction< exists< logic::term >>> & tm )
 {
-   if( disj. sel( ) != logic::op_kleene_or )
-      throw std::logic_error( "calc::istautology : Not a Kleene disjunction" );
+   logic::betareduction beta;
+   projection proj( blfs );
 
-   auto kl = disj. view_kleene( );
-
-   // We just do a few simple checks:
-
-   for( size_t i = 0; i != kl. size( ); ++ i )
+   do
    {
-      if( kl. sub(i). sel( ) == logic::op_equals )
-      {
-         auto eq = kl. sub(i). view_binary( );
-         if( equal( eq. sub1( ), eq. sub2( )) )
-            return true;
-      }
+      beta. counter = 0;
+      tm = outermost( beta, std::move( tm ), 0 );
+
+      proj. counter = 0;
+      tm = outermost( proj, std::move( tm ), 0 );
    }
-
-   // This is of course entirely ridiculous, but it is an exercise
-   // in coding too:
-
-   for( size_t i = 0; i != kl. size( ); ++ i )
-   {
-      if( kl. sub(i). sel( ) == logic::op_not )
-      {
-         const auto& sub = kl. sub(i). view_unary( ). sub( );
-         if( sub. sel( ) == logic::op_prop || 
-             sub. sel( ) == logic::op_equals )
-         {
-            for( size_t j = 0; j != kl. size( ); ++ j )
-            {
-               if( i != j && equal( sub, kl. sub(j)) )
-                  return true;
-            }
-         }
-
-         if( sub. sel( ) == logic::op_prop )
-         {
-            const auto& subsub = sub. view_unary( ). sub( );
-
-            bool saw_subsub = false;
-            bool saw_notsubsub = false;
- 
-            for( size_t j = 0; j != kl. size( ); ++ j )
-            {
-               if( equal( kl. sub(j), subsub ))
-                  saw_subsub = true;
-
-               if( kl. sub(j). sel( ) == logic::op_not &&
-                   equal( kl. sub(j). view_unary( ). sub( ), subsub ))
-               {
-                  saw_notsubsub = true;
-               }
-            }
-
-            if( saw_subsub && saw_notsubsub ) 
-               return true;
-         }
-      }
-   }
-
-   return false; 
+   while( beta. counter || proj. counter );
 }
-
 
 void
 calc::checkproof( const logic::beliefstate& blfs,
@@ -404,30 +354,24 @@ calc::checkproof( const logic::beliefstate& blfs,
          return; 
       }
 
-#if 0
    case prf_expand:
       {
          auto exp = prf. view_expand( ); 
 
-         auto parent = proofcheck( exp. parent( ), seq, err ); 
-         if( !parent. has_value( ))
-            return { };
-
-         auto nm = optform( std::move( parent ), "expand", seq, err );
-
-         expander def( exp. ident( ), exp. occ( ), seq. blfs, err );
+         expander def( exp. ident( ), exp. occ( ), blfs, err );
             // We are using unchecked identifier exp. ident( ).
             // The expander will look only at exact overloads. 
             // This guarantees type safety.
 
-         std::cout << def << "\n"; 
+         std::cout << def << "\n";
 
-         nm. normalize( );
-         // nm. make_anf2( );
-         std::cout << "expand returns " << nm << "\n";
-         return nm. value( );
+         auto fm = std::move( seq. back( ). get(0));
+         seq. back( ). pop( );
+
+         fm = outermost( def, std::move(fm), 0 );
+         seq. back( ). push( std::move(fm));
+         return;
       }
-#endif
 
    case prf_expandlocal:
       {
@@ -464,6 +408,15 @@ calc::checkproof( const logic::beliefstate& blfs,
          seq. back( ). pop( );
 
          fm = outermost( exp, std::move(fm), 0 );
+         seq. back( ). push( std::move(fm));
+         return;
+      }
+
+   case prf_pibeta:
+      { 
+         auto fm = std::move( seq. back( ). get(0));
+         seq. back( ). pop( );
+         pibeta( blfs, fm );
          seq. back( ). push( std::move(fm));
          return;
       }

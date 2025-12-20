@@ -9,15 +9,15 @@
 #include "errorstack.h"
 #include "sequent.h"
 #include "proofterm.h"
-#include "optform.h"
 
 namespace calc
 {
    errorstack::builder
    errorheader( const sequent& seq, std::string_view rule );
 
-   bool istautology( const logic::term& disj ); 
-      // True if disj is (very obviously) a tautology.
+   void 
+   pibeta( const logic::beliefstate& blfs, 
+           forall< disjunction< exists< logic::term >>> & tm );
 
    forall< disjunction< exists< logic::term >>>
    lift( forall< disjunction< exists< logic::term >>> cls, size_t dist );

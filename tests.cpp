@@ -449,7 +449,6 @@ void tests::smallproofs( const logic::beliefstate& blfs, errorstack& err )
       seq. ugly( std::cout );
    }
 
-
    if constexpr( true )
    {
       auto id = identifier( ) + "minhomrel_succ";
@@ -473,56 +472,38 @@ void tests::smallproofs( const logic::beliefstate& blfs, errorstack& err )
             chain( { proofterm( prf_cut ), 
                    orexistselim( "truth", 
                    {
-                      chain( { calc::show( "NEGATED" ) } ), 
+                      chain( { 
+                         proofterm( prf_expandlocal, "goal", 0 ),
+                         proofterm( prf_flatten ),
+                         orexistselim( "exists",
+                         {
+                            chain( 
+                            {
+                               proofterm( prf_flatten ),
+                               proofterm( prf_expand, identifier( ) + "minhomrel", 0 ),
+                               proofterm( prf_expand, identifier( ) + "minimal", 0 ),
+                               proofterm( prf_pibeta ), 
+                               proofterm( prf_flatten ),
+                               orexistselim( "R",
+                               {
+                                  chain(
+                                  {
+                                     proofterm( prf_flatten ),
+                                     proofterm( prf_pick, 1 ),
+                                     calc::show( "UNFINISHED" ) 
+                                  } )
+                               })
+                            } )
+                         } ),
+                         calc::show( "NEGATED" ) } ), 
                       chain( { calc::show( "GOAL" ) } )
-                   } ),
-                   calc::show( "PROP" ) } )
+                   } ) } )
          } );
 
       auto prf = proofterm( prf_propcut, "goal"_unchecked );
       prf = chain( { prf, splitprop } );
       prf. print( indentation( ), std::cout );
  
-#if 0
-#if 0
-      auto ref = clausify( "goal0001"_assumption ); 
-
-      auto sub2 = "skolem0001"_assumption;
-      sub2 = select( {2}, sub2 );
-      sub2 = expand( "minhomrel", 0, sub2 ); 
-      sub2 = expand( "minimal", 0, sub2 );
-      sub2 = clausify( sub2 );
-      sub2 = proofterm( prf_forallelim, sub2, 0, { "R0001"_unchecked } );
- 
-      auto sub = "skolem0001"_assumption;
-      sub = select( {3}, sub );
-      sub = expand( "minhomrel", 0, sub );
-      sub = expand( "minimal", 0, sub );
-      sub = clausify( sub );
-
-      auto homrel = "skolem0002"_assumption;
-      homrel = select( {1}, homrel );
-      homrel = expand( "homrel", 0, homrel );
-      homrel = clausify( homrel );
-      homrel = select( {1}, homrel );
-      homrel = proofterm( prf_forallelim, homrel, 0, { "x0001"_unchecked, "x0002"_unchecked } );
-
-      sub2 = andintro( { sub2, homrel, "skolem0002"_assumption, "skolem0001"_assumption } );
-      sub2 = simplify( sub2 );
-      sub2 = show( "FINAL SIMPLIFICATION", sub2 ); 
-
-      sub = proofterm( prf_existselim, sub, 0, "skolem", sub2 );
-      ref = proofterm( prf_existselim, ref, 0, "skolem", sub );
-
-      ref. print( indentation(0), std::cout );
-
-      auto ff = deduce( ref, seq, err );
-      if( ff. has_value( ))
-         std::cout << "proved this formula: " << ff. value( ) << "\n\n";
-      else
-         std::cout << "(proved nothing)\n\n";
-#endif
-#endif
       checkproof( blfs, prf, seq, err );
       std::cout << "\n";
       std::cout << "FINAL STATE\n";

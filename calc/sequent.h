@@ -39,11 +39,15 @@ namespace calc
          void push( forall< disjunction< exists< logic::term >>> form )
             { stack. push_back( std::move( form )); }
 
+         void pop( );
+
          const forall< disjunction< exists< logic::term >>> & 
             get( size_t ind ) const; 
- 
+
          forall< disjunction< exists< logic::term >>> &
             get( size_t ind );
+
+         void erase( size_t ind );
 
          using iterator = 
          std::vector< forall< disjunction< exists< logic::term >>>> 
@@ -55,7 +59,6 @@ namespace calc
             // bottom of stack to top of stack. They are useful
             // for copying or processing.
 
-         void pop( );
 
          void clear( ) 
             { stack. clear( ); }    // Forget about everything.

@@ -15,13 +15,15 @@
 %option flatten { prf_flatten } => 
 
 %option lift { prf_lift } => level : std::string, ind : size_t
+%option pick { prf_pick } => ind : size_t
+%option erase { prf_erase } => ind : size_t
 
 %option orexistselim { prf_orexistselim } => 
    name : std::string,[ branch : proofterm ] 
 
-%option expand { prf_expand } => 
-   ident : identifier, occ : size_t, parent : proofterm 
+%option expand { prf_expand } => ident : identifier, occ : size_t 
 %option expandlocal { prf_expandlocal } => var : std::string, occ : size_t
+%option pibeta { prf_pibeta } => 
 
 %option forallintro { prf_forallintro } =>
    parent : proofterm, [ var : logic::vartype ]
@@ -105,16 +107,21 @@
          {
             auto exp = view_expand( );
             out << ind << "expand ";
-            out << exp. ident( ) << ", occurrence " << exp. occ( ) << " in\n";
-            exp. parent( ). print( ind + 3, out ); 
+            out << exp. ident( ) << ", occurrence " << exp. occ( ) << "\n";
             return;  
          }
 
       case prf_expandlocal:
          {
             auto exp = view_expandlocal( );
-            out << ind << "expand local: ";
+            out << ind << "expand local ";
             out << exp. var( ) << ", occurrence " << exp. occ( ) << "\n";
+            return;
+         }
+
+      case prf_pibeta:
+         {
+            out << ind << "pibeta\n";
             return;
          }
 
@@ -124,6 +131,14 @@
             out << ind << "lift " << lift. level( );
             out << '[' << lift. ind( ) << "]\n";
             return;
+         }
+
+      case prf_pick:
+         {
+            auto pck = view_pick( );
+            out << ind << "pick " << pck. ind( ) << "\n";
+            return;
+
          }
 
       case prf_define:
