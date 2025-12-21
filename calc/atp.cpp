@@ -284,7 +284,7 @@ calc::atp::rewrite( const clause& from, clause& into )
 
 void calc::atp::simplify( conjunction< clause > & simp )
 {
-   std::cout << "starting full simplification\n";
+   std::cout << "starting simplification on conjunction of clauses\n";
 
    for( auto s = simp. begin( ); s != simp. end( ); ++ s )
       simplify( *s );

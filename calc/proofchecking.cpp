@@ -428,9 +428,9 @@ calc::checkproof( const logic::beliefstate& blfs,
          return;
       }
 
-   case prf_lift:
+   case prf_copy:
       {
-         auto lft = prf. view_lift( );
+         auto copy = prf. view_copy( );
 
          // This is not terribly efficient, but I think
          // that the number of levels in a proof is logarithmic in its
@@ -438,12 +438,12 @@ calc::checkproof( const logic::beliefstate& blfs,
 
          for( size_t lev = 0; lev != seq. size( ); ++ lev )
          {
-            if( seq. at( lev ). name == lft. level( ))
+            if( seq. at( lev ). name == copy. level( ))
             { 
-               if( !seq. at( lev ). inrange( lft. ind( )))
-                  throw std::logic_error( "lift, wrong index" );
+               if( !seq. at( lev ). inrange( copy. ind( )))
+                  throw std::logic_error( "copy: wrong index" );
 
-               auto fm = seq. at( lev ). at( lft. ind( ));
+               auto fm = seq. at( lev ). at( copy. ind( ));
                   // Copy, not move!
 
                seq. back( ). push( lift( std::move( fm ),
@@ -542,15 +542,12 @@ calc::checkproof( const logic::beliefstate& blfs,
       {
          auto elim = prf. view_forallelim( );
 
-         std::cout << elim. ind( ) << "\n";
-
          if( !seq. back( ). inrange( elim. ind( )))
             throw std::logic_error( "forallelim: index out of range" );
 
          auto mainform = std::move( seq. back( ). at( elim. ind( )));
-            // We will later put the instance back in place.
+            // We will later put the instance at this place.
 
-         std::cout << "mainform " << mainform << "\n\n";
          if( mainform. vars. size( ) < elim. size( ))
          {
             throw std::runtime_error( "forallelim: Too many values" );
@@ -613,7 +610,6 @@ calc::checkproof( const logic::beliefstate& blfs,
             throw std::runtime_error( "we cannot do forallinst, types wrong" );
          }
 
-#if 0
          // We do not remove the outermost forall, because its 
          // its presence is required by the data structure. 
          // We remove the variables It is allowed that some variables remain. 
@@ -623,9 +619,8 @@ calc::checkproof( const logic::beliefstate& blfs,
 
          mainform = outermost( subst, std::move( mainform ), 0 ); 
 
-         seq. back( ). push( std::move( mainform ));
+         seq. back( ). at( elim. ind( )) = std::move( mainform );
          return;  
-#endif
       }
 #if 0
    case prf_andintro:

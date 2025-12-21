@@ -407,29 +407,29 @@ void tests::smallproofs( const logic::beliefstate& blfs, errorstack& err )
                 orexistselim( -1, "xxx",
                    { chain( { proofterm( prf_flatten, - 1 ),
                         orexistselim( -1, "yyy", { 
-                           chain( { proofterm( prf_lift, "xxx", 0 ),
+                           chain( { proofterm( prf_copy, "xxx", 0 ),
                                     proofterm( prf_forallelim, -1, { 0_db } ),
                                     prf_simplify } ),
                            chain( 
-                              { proofterm( prf_lift, "xxx", 1 ), 
+                              { proofterm( prf_copy, "xxx", 1 ), 
                                 proofterm( prf_forallelim, -1, { 0_db } ),
                                 prf_simplify
                               } ),
-                           chain( { proofterm( prf_lift, "xxx", 0 ),
+                           chain( { proofterm( prf_copy, "xxx", 0 ),
                                     proofterm( prf_forallelim, -1, { 0_db } ),
                                     prf_simplify } ),
                            chain(
-                              { proofterm( prf_lift, "xxx", 2 ),
+                              { proofterm( prf_copy, "xxx", 2 ),
                                 proofterm( prf_forallelim, -1, { 0_db } ),
                                 prf_simplify
                               } ),
                             chain(
-                              { proofterm( prf_lift, "xxx", 1 ),
+                              { proofterm( prf_copy, "xxx", 1 ),
                                 proofterm( prf_forallelim, -1, { 0_db } ),
                                 prf_simplify,
                               } ),
                             chain(
-                              { proofterm( prf_lift, "xxx", 2 ),
+                              { proofterm( prf_copy, "xxx", 2 ),
                                 proofterm( prf_forallelim, -1, { 0_db } ),
                                 prf_simplify 
                               } ) 
@@ -494,12 +494,16 @@ void tests::smallproofs( const logic::beliefstate& blfs, errorstack& err )
                                   chain(
                                   {
                                      proofterm( prf_flatten, -1 ),
+                                     proofterm( prf_copy, "R", -2 ),
                                      proofterm( prf_expand, -1, identifier( ) + "homrel", 0 ),
                                      proofterm( prf_betapi, -1 ),
                                      proofterm( prf_flatten, -1 ),
-                                     calc::show( "UNFINISHED" ),
-                                     proofterm( prf_lift, "exists", 2 ),
                                      proofterm( prf_forallelim, -1, { 2_db, 1_db } ), 
+                                     proofterm( prf_copy, "exists", 2 ),  
+                                     proofterm( prf_forallelim, -1, { 0_db } ),
+                                     proofterm( prf_copy, "exists", 0 ),
+                                     proofterm( prf_copy, "exists", 1 ),
+                                     proofterm( prf_simplify ) 
                                   } )
                                })
                             } )
