@@ -7,8 +7,6 @@ logic::term
 calc::localexpander::operator( ) ( logic::term tm, 
                                    size_t vardepth, bool& change )
 {
-   std::cout << "term = " << tm << "\n";
-
    if( tm. sel( ) == logic::op_debruijn )
    {
       size_t ind = tm. view_debruijn( ). index( );

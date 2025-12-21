@@ -39,19 +39,24 @@ namespace calc
          void push( forall< disjunction< exists< logic::term >>> form )
             { stack. push_back( std::move( form )); }
 
-         void pop( );
+         // We use Python style indexing. That means that -1 is the last
+         // element.
 
          const forall< disjunction< exists< logic::term >>> & 
-            get( size_t ind ) const; 
+         at( ssize_t ind ) const; 
 
          forall< disjunction< exists< logic::term >>> &
-            get( size_t ind );
+            at( ssize_t ind );
 
-         void erase( size_t ind );
+         void erase( ssize_t ind );
 
          using iterator = 
          std::vector< forall< disjunction< exists< logic::term >>>> 
                  :: iterator;
+
+         using const_iterator =
+         std::vector< forall< disjunction< exists< logic::term >>>>
+                 :: const_iterator;
 
          iterator begin( ) { return stack. begin( ); }
          iterator end( ) { return stack. end( ); }
@@ -59,11 +64,17 @@ namespace calc
             // bottom of stack to top of stack. They are useful
             // for copying or processing.
 
-
          void clear( ) 
-            { stack. clear( ); }    // Forget about everything.
+            { stack. clear( ); }    
+         // Forget about everything. Used to think that it was so easy.
 
          size_t size( ) const { return stack. size( ); } 
+
+         bool inrange( ssize_t ind ) const;
+            // True if ind can be used as an index.
+
+         iterator find( ssize_t ind );
+         const_iterator find( ssize_t ind ) const; 
       };
 
        
@@ -71,6 +82,7 @@ namespace calc
       indexedstack< std::string, size_t > db;
          // db is needed because we typecheck terms during 
          // proofchecking. 'db' stands for De Bruijn. 
+         // size_t looks from the beginning!
 
       std::map< size_t, logic::term > defs;
          // If a position in ctxt is a definition, its value is here.
@@ -105,7 +117,6 @@ namespace calc
 
       const level& at( size_t ind ) const { return lev. at( ind ); }
       level& at( size_t ind ) { return lev. at( ind ); }
-
    };
 
 

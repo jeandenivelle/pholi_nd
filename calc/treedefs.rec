@@ -5,29 +5,30 @@
 %define proofterm ( prf_nop ) 
 
 %option propcut { prf_propcut } => fm : logic::term
-%option cut { prf_cut } =>    
-   // We eat a formula from the sequent, so we don't
-   // need an argument.
+%option cut { prf_cut } => ind : ssize_t 
 
 %option chain { prf_chain } => [ step : proofterm ] 
 %option nop { prf_nop } => 
 
-%option flatten { prf_flatten } => 
+%option flatten { prf_flatten } => ind : ssize_t 
 
-%option lift { prf_lift } => level : std::string, ind : size_t
-%option pick { prf_pick } => ind : size_t
-%option erase { prf_erase } => ind : size_t
+%option lift { prf_lift } => level : std::string, ind : ssize_t
+%option erase { prf_erase } => ind : ssize_t
 
-%option orexistselim { prf_orexistselim } => 
-   name : std::string,[ branch : proofterm ] 
+%option orexistselim { prf_orexistselim } => ind : ssize_t, 
+   name : std::string, [ branch : proofterm ] 
 
-%option expand { prf_expand } => ident : identifier, occ : size_t 
-%option expandlocal { prf_expandlocal } => var : std::string, occ : size_t
-%option pibeta { prf_pibeta } => 
+%option expand { prf_expand } => 
+   ind : ssize_t, ident : identifier, occ : size_t 
+
+%option expandlocal { prf_expandlocal } => 
+   ind : ssize_t, name : std::string, occ : size_t
+%option betapi { prf_betapi } => ind : ssize_t
 
 %option forallintro { prf_forallintro } =>
    parent : proofterm, [ var : logic::vartype ]
-%option forallelim { prf_forallelim } => [ value : logic::term ] 
+%option forallelim { prf_forallelim } => 
+   ind : ssize_t, [ value : logic::term ] 
 
 %option define { prf_define } =>
    name : std::string, val : logic::term, parent : proofterm
@@ -71,7 +72,7 @@
          return;
 
      case prf_cut:
-        out << ind << "cut\n"; 
+        out << ind << "cut " << view_cut( ). ind( ) << "\n";
         return;
 
       case prf_chain: 
@@ -88,7 +89,7 @@
          return;
 
       case prf_flatten:
-         out << ind << "flatten\n";
+         out << ind << "flatten " << view_flatten( ). ind( ) << "\n";
          return; 
 
       case prf_orexistselim:
@@ -107,21 +108,23 @@
          {
             auto exp = view_expand( );
             out << ind << "expand ";
-            out << exp. ident( ) << ", occurrence " << exp. occ( ) << "\n";
+            out << exp. ident( ) << "/" << exp. occ( );
+            out << " in " << exp. ind( ) << "\n";
             return;  
          }
 
       case prf_expandlocal:
          {
             auto exp = view_expandlocal( );
-            out << ind << "expand local ";
-            out << exp. var( ) << ", occurrence " << exp. occ( ) << "\n";
+            out << ind << "expandlocal ";
+            out << exp. name( ) << "/" << exp. occ( );
+            out << " in " << exp. ind( ) << "\n";
             return;
          }
 
-      case prf_pibeta:
+      case prf_betapi:
          {
-            out << ind << "pibeta\n";
+            out << ind << "pibeta" << view_betapi( ). ind( ) << "\n";
             return;
          }
 
@@ -131,14 +134,6 @@
             out << ind << "lift " << lift. level( );
             out << '[' << lift. ind( ) << "]\n";
             return;
-         }
-
-      case prf_pick:
-         {
-            auto pck = view_pick( );
-            out << ind << "pick " << pck. ind( ) << "\n";
-            return;
-
          }
 
       case prf_define:
@@ -175,7 +170,7 @@
                if(i) out << ",  ";
                out << elim. value(i) << "\n";
             }
-            out << "\n";
+            out << " in " << elim. ind( ) << "\n";
             return;
          }
 

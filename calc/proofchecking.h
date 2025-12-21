@@ -16,7 +16,7 @@ namespace calc
    errorheader( const sequent& seq, std::string_view rule );
 
    void 
-   pibeta( const logic::beliefstate& blfs, 
+   betapi( const logic::beliefstate& blfs, 
            forall< disjunction< exists< logic::term >>> & tm );
 
    forall< disjunction< exists< logic::term >>>

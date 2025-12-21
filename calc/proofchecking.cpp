@@ -35,7 +35,7 @@ calc::lift( forall< disjunction< exists< logic::term >>> cls, size_t dist )
 }
 
 void
-calc::pibeta( const logic::beliefstate& blfs,
+calc::betapi( const logic::beliefstate& blfs,
               forall< disjunction< exists< logic::term >>> & tm )
 {
    logic::betareduction beta;
@@ -56,6 +56,8 @@ void
 calc::checkproof( const logic::beliefstate& blfs,
                   proofterm& prf, sequent& seq, errorstack& err )
 {
+   std::cout << "checkproof: " << prf. sel( ) << "\n";
+
    switch( prf. sel( ))
    {
 
@@ -88,15 +90,18 @@ calc::checkproof( const logic::beliefstate& blfs,
 
    case prf_flatten: 
       {
-         auto fm = std::move( seq. back( ). get(0));
-         seq. back( ). pop( );
-         std::cout << "flattening " << fm << "\n";
+         auto flat = prf. view_flatten( ); 
+
+         if( !seq. back( ). inrange( flat. ind( )) )
+            throw std::logic_error( "flatten: index out of range" );
+
+         auto fm = std::move( seq. back( ). at( flat. ind( )) );
+         seq. back( ). erase( flat. ind( )); 
 
          anf< logic::term > conj;
          conj. append( std::move(fm));
          conj = flatten( std::move( conj ));
 
-         std::cout << conj << "\n\n";
          for( auto& c : conj )
             seq. back( ). push( std::move(c) );
 
@@ -106,11 +111,12 @@ calc::checkproof( const logic::beliefstate& blfs,
    case prf_orexistselim:
       {
          auto elim = prf. view_orexistselim( ); 
-         auto mainform = std::move( seq. back( ). get(0));
+         auto mainform = std::move( seq. back( ). at( elim. ind( )) );
             // Should be a universally quantified disjunction,
             // without variables.
 
-         seq. back( ). pop( );
+         std::cout << "mainform = " << mainform << "\n";
+         seq. back( ). erase( elim. ind( ));
 
          if( mainform. vars. size( ))
          {
@@ -174,7 +180,7 @@ calc::checkproof( const logic::beliefstate& blfs,
                throw std::runtime_error( "orexistselim: No result" );
             }
 
-            auto concl = std::move( seq. back( ). get(0));
+            auto concl = std::move( seq. back( ). at( -1 ));
                // Conclusion of our current assumption.
 
             if( concl. vars. size( ))
@@ -310,10 +316,10 @@ calc::checkproof( const logic::beliefstate& blfs,
       {
          auto cut = prf. view_cut( );
 
-         if( seq. back( ). size( ) == 0 )
-            throw std::runtime_error( "cut: There is no formula" );
+         if( !seq. back( ). inrange( cut. ind( )) )
+            throw std::runtime_error( "cut: index out of range" );
 
-         auto fm = seq. back( ). get(0);
+         auto fm = seq. back( ). at( cut. ind( ));
             // We don't consume, because we expect to need
             // Propness many times. 
 
@@ -321,7 +327,7 @@ calc::checkproof( const logic::beliefstate& blfs,
             throw std::runtime_error( "cut: Formula has variables" );
 
          if( fm. body. size( ) != 1 )
-            throw std::runtime_error( "cut: Formula not a fact" );
+            throw std::runtime_error( "cut: Formula not a singleton" );
 
          if( fm. body. at(0). vars. size( ))
             throw std::runtime_error( "cut: Formula has existential variables" );
@@ -331,13 +337,11 @@ calc::checkproof( const logic::beliefstate& blfs,
             throw std::runtime_error( "cut: Formula not prop" );
 
          auto cutform = prp. view_unary( ). sub( );
-         std::cout << "cutform = " << cutform << "\n";
          fm. body. at(0). body = logic::term( logic::op_not, cutform );
          fm. body. append( exists( cutform ));
  
          seq. back( ). push( std::move( fm ));
          return;
-
       }
 
    case prf_chain:
@@ -357,42 +361,41 @@ calc::checkproof( const logic::beliefstate& blfs,
    case prf_expand:
       {
          auto exp = prf. view_expand( ); 
-
+   
          expander def( exp. ident( ), exp. occ( ), blfs, err );
             // We are using unchecked identifier exp. ident( ).
             // The expander will look only at exact overloads. 
             // This guarantees type safety.
 
-         std::cout << def << "\n";
+         if( !seq. back( ). inrange( exp. ind( )))
+            throw std::logic_error( "expand: index out of range" );
 
-         auto fm = std::move( seq. back( ). get(0));
-         seq. back( ). pop( );
+         seq. back( ). at( exp. ind( )) =
+            outermost( def, std::move( seq. back( ). at( exp. ind( ))), 0 );
 
-         fm = outermost( def, std::move(fm), 0 );
-         seq. back( ). push( std::move(fm));
          return;
       }
 
    case prf_expandlocal:
       {
-         auto var = prf. view_expandlocal( ). var( );
+         auto exp = prf. view_expandlocal( );
+         auto name = exp. name( );
 
          // We have an identifier, but we need a De Bruijn index:
 
-         size_t ind = seq. ctxt. size( );
+         size_t var = seq. ctxt. size( );
          {  
-            auto p = seq. db. find( var );
+            auto p = seq. db. find( name );
             if( p == seq. db. end( ))
             {
                throw std::logic_error( "did not find the variable" );
             }
 
-            ind = p -> second;
+            var = p -> second;
          }
-         std::cout << "index = " << ind << "\n";
 
-         auto def = seq. defs. find( ind );
-         if( def == seq. defs. end( ))
+         auto p = seq. defs. find( var );
+         if( p == seq. defs. end( ))
          {
             throw std::logic_error( "variable has no definition" );
          }
@@ -400,24 +403,28 @@ calc::checkproof( const logic::beliefstate& blfs,
          if( seq. back( ). contextsize != seq. ctxt. size( ))
             throw std::logic_error( "size of context does not fit to level" );
 
-         auto exp = localexpander( seq. ctxt. size( ) - ind - 1,  
-                                   def -> second, 
+         auto def = localexpander( seq. ctxt. size( ) - var - 1,  
+                                   p -> second, 
                                    prf. view_expandlocal( ). occ( ));
 
-         auto fm = std::move( seq. back( ). get(0));
-         seq. back( ). pop( );
+         if( !seq. back( ). inrange( exp. ind( )))
+            throw std::logic_error( "expandlocal: index out of range" );
 
-         fm = outermost( exp, std::move(fm), 0 );
-         seq. back( ). push( std::move(fm));
+         seq. back( ). at( exp. ind( )) =
+            outermost( def, std::move( seq. back( ). at( exp. ind( ))), 0 );
+
          return;
       }
 
-   case prf_pibeta:
+   case prf_betapi:
       { 
-         auto fm = std::move( seq. back( ). get(0));
-         seq. back( ). pop( );
-         pibeta( blfs, fm );
-         seq. back( ). push( std::move(fm));
+         auto ind = prf. view_betapi( ). ind( );
+         std::cout << ind << "\n";
+ 
+         if( !seq. back( ). inrange( ind ))
+            throw std::logic_error( "betapi: index out of range" );
+
+         betapi( blfs, seq. back( ). at( ind ));
          return;
       }
 
@@ -429,23 +436,21 @@ calc::checkproof( const logic::beliefstate& blfs,
          // that the number of levels in a proof is logarithmic in its
          // size.
 
-         seq. ugly( std::cout );
-
          for( size_t lev = 0; lev != seq. size( ); ++ lev )
          {
             if( seq. at( lev ). name == lft. level( ))
             { 
-               if( lft. ind( ) < seq. at( lev ). stack. size( ))
-               {
-                  auto fm = seq. at( lev ). stack[ lft. ind( ) ];
-                  seq. back( ). push( lift( std::move(fm),
+               if( !seq. at( lev ). inrange( lft. ind( )))
+                  throw std::logic_error( "lift, wrong index" );
+
+               auto fm = seq. at( lev ). at( lft. ind( ));
+                  // Copy, not move!
+
+               seq. back( ). push( lift( std::move( fm ),
                                       seq. ctxt. size( ) -
                                       seq. at( lev ). contextsize ));
 
-                  return;  // succesful return. 
-               }
-               else
-                  std::cout << "too big\n";
+               return;  // succesful return. 
             }
          }
          throw std::logic_error( " not found " );
@@ -536,11 +541,16 @@ calc::checkproof( const logic::beliefstate& blfs,
    case prf_forallelim:
       {
          auto elim = prf. view_forallelim( );
-         auto mainform = std::move( seq. back( ). get(0));
-            // Should be universally quantified.
 
-         seq. back( ). pop( );
+         std::cout << elim. ind( ) << "\n";
 
+         if( !seq. back( ). inrange( elim. ind( )))
+            throw std::logic_error( "forallelim: index out of range" );
+
+         auto mainform = std::move( seq. back( ). at( elim. ind( )));
+            // We will later put the instance back in place.
+
+         std::cout << "mainform " << mainform << "\n\n";
          if( mainform. vars. size( ) < elim. size( ))
          {
             throw std::runtime_error( "forallelim: Too many values" );
@@ -603,19 +613,19 @@ calc::checkproof( const logic::beliefstate& blfs,
             throw std::runtime_error( "we cannot do forallinst, types wrong" );
          }
 
-         std::cout << subst << "\n";
-         mainform = outermost( subst, std::move( mainform ), 0 ); 
- 
-         // We do not remove the outermost forall, because the
-         // implementation requires its presence. We remove the variables
-         // that were instantiated. It is possible that some remain. 
+#if 0
+         // We do not remove the outermost forall, because its 
+         // its presence is required by the data structure. 
+         // We remove the variables It is allowed that some variables remain. 
 
          mainform. vars. erase( mainform. vars. begin( ),
                                 mainform. vars. begin( ) + elim. size( ));
 
-         std::cout << "after instantiation: " << mainform << "\n";
+         mainform = outermost( subst, std::move( mainform ), 0 ); 
+
          seq. back( ). push( std::move( mainform ));
          return;  
+#endif
       }
 #if 0
    case prf_andintro:

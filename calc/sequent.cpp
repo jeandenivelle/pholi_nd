@@ -3,32 +3,51 @@
 #include "logic/pretty.h"
 
 
-auto calc::sequent::level::get( size_t ind ) const 
+auto calc::sequent::level::at( ssize_t ind ) const 
    -> const forall< disjunction< exists< logic::term >>> & 
 {
-   throw std::logic_error( "const is used" );
-   if( ind >= stack. size( ))
-      throw std::logic_error( "sequent::level::at: index too high" ); 
-
-   return stack. at( stack. size( ) - ind - 1 );
+   auto it = find( ind );
+   return *it; 
 }
 
-auto calc::sequent::level::get( size_t ind ) 
+auto calc::sequent::level::at( ssize_t ind ) 
    -> forall< disjunction< exists< logic::term >>> &
 {
-   if( ind >= stack. size( ))
-      throw std::logic_error( "sequent::level::at: index too high" );
-
-   return stack. at( stack. size( ) - ind - 1 );
+   auto it = find( ind );
+   return *it; 
 }
 
-
-void calc::sequent::level::pop( )
+void calc::sequent::level::erase( ssize_t ind )
 {
-   if( stack. size( ) == 0 )
-      throw std::logic_error( "pop: no formula to pop" );
+   auto it = find( ind );
+   stack. erase( it );
+}
 
-   stack. pop_back( );
+bool
+calc::sequent::level::inrange( ssize_t ind ) const
+{
+   ssize_t ss = stack. size( );
+   return ind >= -ss && ind < ss;
+}
+
+auto
+calc::sequent::level::find( ssize_t ind ) 
+   -> level::iterator
+{
+   if( !inrange( ind ))
+      throw std::range_error( "level: index out of range" );
+
+   if( ind >= 0 )
+      return stack. begin( ) + ind;
+   else
+      return stack. end( ) + ind;
+}
+
+auto
+calc::sequent::level::find( ssize_t ind ) const
+   -> level::const_iterator
+{
+   throw std::logic_error( "const find not implemented" );
 }
 
 size_t
