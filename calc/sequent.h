@@ -30,7 +30,7 @@ namespace calc
 
          std::vector< forall< disjunction< exists< logic::term >>>> stack; 
          size_t contextsize;   
-            // At the moment when the level is created.
+            // At the moment when the level was created.
 
          level( std::string name, size_t contextsize )
             : name( std::move( name )), contextsize( contextsize )
@@ -40,7 +40,7 @@ namespace calc
             { stack. push_back( std::move( form )); }
 
          // We use Python style indexing. That means that -1 is the last
-         // element.
+         // element, and 0 is the first element: 
 
          const forall< disjunction< exists< logic::term >>> & 
          at( ssize_t ind ) const; 
@@ -64,9 +64,8 @@ namespace calc
             // bottom of stack to top of stack. They are useful
             // for copying or processing.
 
-         void clear( ) 
-            { stack. clear( ); }    
-         // Forget about everything. Used to think that it was so easy.
+         void clear( ) { stack. clear( ); }    
+            // Forget about everything. Used to think that it was so easy.
 
          size_t size( ) const { return stack. size( ); } 
 
@@ -96,7 +95,7 @@ namespace calc
 
       size_t size( ) const { return lev. size( ); }
 
-      void ugly( std::ostream& out ) const;      
+      void ugly( std::ostream& out ) const;  
 #if 0
       void pretty( std::ostream& out, bool showblocked = false ) const;
 #endif

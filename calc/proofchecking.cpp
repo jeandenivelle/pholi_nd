@@ -52,6 +52,32 @@ calc::betapi( const logic::beliefstate& blfs,
    while( beta. counter || proj. counter );
 }
 
+std::optional< logic::type >
+calc::checktype( const logic::beliefstate& blfs,
+                 logic::term& tm, sequent& seq, errorstack& err )
+{
+   tm = replace_debruijn( seq. db, std::move(tm) );
+
+   size_t ss = seq. ctxt. size( );
+   size_t ee = err. size( );
+
+   auto tp = checkandresolve( blfs, err, seq. ctxt, tm );
+
+   if( seq. ctxt. size( ) != ss )
+      throw std::logic_error( "context not restored" );
+
+   if( ee != err. size( ))
+      std::cout << ( err. size( ) - ee ) << " errors were created\n";
+
+   if( !tp. has_value( ))
+   {
+      std::cout << tm << "\n";
+      throw std::logic_error( "term has no type" ); 
+   }
+
+   return tp; 
+}
+
 void
 calc::checkproof( const logic::beliefstate& blfs,
                   proofterm& prf, sequent& seq, errorstack& err )
@@ -456,27 +482,35 @@ calc::checkproof( const logic::beliefstate& blfs,
          throw std::logic_error( " not found " );
       }
 
-#if 0
-   case prf_define: 
+   case prf_deflocal: 
       {
-         auto def = prf. view_define( );
+         auto def = prf. view_deflocal( );
+         auto val = def. extr_val( );
 
-         // We first need to typecheck the value:
-
-         auto val = def. val( );
-         size_t errsize = err. size( );
-         logic::context ctxt;
-         auto tp = checkandresolve( seq. blfs, err, ctxt, val );
-
-         if( err. size( ) > errsize )
-         {
-            err. addheader( errsize, "during type checking of inproof definition" );
-            throw std::logic_error( "do something" );
-         } 
+         std::cout << "val = " << val << "\n";
+         auto tp = checktype( blfs, val, seq, err );
 
          if( !tp. has_value( ))
-            throw std::logic_error( "should be unreachable" );
+            throw std::logic_error( "def local, no type" );
 
+         def. update_val( val );
+
+         size_t ss = seq. ctxt. size( );
+         if( seq. size( ) == 0 )
+            throw std::logic_error( "this cannot happen" );
+
+         for( auto& fm : seq. back( ))
+            fm = lift( std::move( fm ), 1 );
+
+         seq. define( def. name( ), val, tp. value( ));
+
+         auto sub = def. extr_sub( ); 
+         checkproof( blfs, sub, seq, err );
+         def. update_sub( std::move( sub ));
+
+         // We need to apply a substitution.
+
+#if 0
          size_t seqsize = seq. size( );
          seq. define( def. name( ), val, tp. value( ));
          
@@ -494,8 +528,10 @@ calc::checkproof( const logic::beliefstate& blfs,
          res. value( ) = outermost( rewr, std::move( res. value( )), 0 );
          seq. restore( seqsize );
          return res;
+#endif
+         throw std::logic_error( "deflocal unfinished" );
       }
-   
+#if 0
    case prf_forallintro:
       {
          auto intro = prf. view_forallintro( );

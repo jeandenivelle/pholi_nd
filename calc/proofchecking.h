@@ -5,6 +5,7 @@
 #define CALC_PROOFCHECKING_
 
 #include <string_view>
+#include <optional>
 
 #include "errorstack.h"
 #include "sequent.h"
@@ -21,6 +22,10 @@ namespace calc
 
    forall< disjunction< exists< logic::term >>>
    lift( forall< disjunction< exists< logic::term >>> cls, size_t dist );
+
+   std::optional< logic::type >
+   checktype( const logic::beliefstate& blfs,
+              logic::term& tm, sequent& seq, errorstack& err );
 
    void checkproof( const logic::beliefstate& blfs,
                     proofterm& prf, sequent& seq, errorstack& err );

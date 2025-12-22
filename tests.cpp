@@ -445,7 +445,6 @@ void tests::smallproofs( const logic::beliefstate& blfs, errorstack& err )
 
       checkproof( blfs, prf, seq, err );
       std::cout << "\n";
-      std::cout << "FINAL STATE\n";
       seq. ugly( std::cout );
    }
 
@@ -469,7 +468,7 @@ void tests::smallproofs( const logic::beliefstate& blfs, errorstack& err )
       auto splitprop = orexistselim( -1, "prop",
          {
             chain( { calc::show( "NOTPROP" ) } ),
-            chain( { proofterm( prf_cut, (ssize_t) -1 ), 
+            chain( { proofterm( prf_cut, -1 ), 
                    orexistselim( -1, "truth", 
                    {
                       chain( { 
@@ -507,8 +506,7 @@ void tests::smallproofs( const logic::beliefstate& blfs, errorstack& err )
                                   } )
                                })
                             } )
-                         } ),
-                         calc::show( "NEGATED" ) } ), 
+                         } ) } ), 
                       chain( { calc::show( "GOAL" ) } )
                    } ) } )
          } );
@@ -521,7 +519,6 @@ void tests::smallproofs( const logic::beliefstate& blfs, errorstack& err )
       std::cout << "\n";
       std::cout << "FINAL STATE\n";
       seq. ugly( std::cout );
-
    }
 }
 
@@ -534,44 +531,71 @@ tests::bigproof( const logic::beliefstate& blfs, errorstack& err )
    auto Nat = logic::type( logic::type_unchecked, identifier( ) + "Nat" );
 
    using namespace calc;
-#if 0
+
    auto id = identifier( ) + "just";
    const auto& f = blfs. getformulas( id );
    std::cout << f. size( ) << "\n";
    if( f. size( ) != 1 )
       throw std::runtime_error( "cannot continue" );
 
-   auto seq = sequent( blfs );
+   auto seq = sequent( );
+   auto nr = seq. define( "goal",
+                          blfs. at( f. front( )). view_form( ). fm( ),
+                          logic::type( logic::type_form ));
+
+   seq. push_back( "goal" );
+   seq. ugly( std::cout );
+
    std::cout << "start of a big proof --------------------------\n";
 
-   seq. assume( "initial", ! blfs. at( f. front( )). view_thm( ). frm( ));
-   std::cout << seq << "\n";
-
-   logic::term indhyp = logic::term( logic::op_false );  // Q in the paper. 
+   logic::term indhyp = logic::term( logic::op_false );  
+      // Called Q in the paper. 
    {
       using namespace logic;
       auto disj1 = 
-         1_db == apply( "0"_unchecked, { 3_db } ) &&
-         0_db == apply( "0"_unchecked, { 2_db } );
+         "x1"_unchecked == apply( "0"_unchecked, { "n1"_unchecked } ) &&
+         "x2"_unchecked == apply( "0"_unchecked, { "n2"_unchecked } );
 
       // Left and right of the lazy-and inside the exists:
 
       auto la1 =
-         apply( "gen"_unchecked, { 5_db, 1_db } ) && 
-         apply( "gen"_unchecked, { 4_db, 0_db } );
+         apply( "gen"_unchecked, { "n1"_unchecked, "y1"_unchecked } ) && 
+         apply( "gen"_unchecked, { "n2"_unchecked, "y2"_unchecked } );
 
       auto la2 = 
-         apply( "minhomrel"_unchecked, { 5_db, 4_db, 1_db, 0_db } ) &&
-         3_db == apply( "succ"_unchecked, { 5_db, 1_db } ) &&
-         2_db == apply( "succ"_unchecked, { 4_db, 0_db } );
+         apply( "minhomrel"_unchecked, { "n1"_unchecked, "n2"_unchecked, "y1"_unchecked, "y2"_unchecked } ) &&
+         "x1"_unchecked == apply( "succ"_unchecked, { "n1"_unchecked, "y1"_unchecked } ) &&
+         "x2"_unchecked == apply( "succ"_unchecked, { "n2"_unchecked, "y2"_unchecked } );
 
-      auto disj2 = exists( { { "y1", O }, { "y2", O }}, lazy_and( la1, la2 ));
+      auto disj2 = logic::exists( { { "y1", O }, { "y2", O }}, lazy_and( la1, la2 ));
 
       indhyp = disj1 || disj2; 
       indhyp = lambda( {{ "x1", O }, { "x2", O }}, indhyp );
       indhyp = lambda( {{ "n1", Nat }, { "n2", Nat }}, indhyp );
    }
 
+   auto propproof =
+      chain( { proofterm( prf_show, "PROP-UNFINISHED" ) } );
+
+   auto mainproof =
+      chain( { proofterm( prf_expandlocal, -1, "goal", 0 ),  
+               proofterm( prf_flatten, -1 ),
+               proofterm( prf_orexistselim, -1, "outermost",
+               { 
+                  chain( { proofterm( prf_flatten, -1 ),
+                           proofterm( prf_expand, -3, identifier( ) + "minhomrel", 0 ),
+                           proofterm( prf_expand, -3, identifier( ) + "minimal", 0 ),
+                           proofterm( prf_betapi, -3 ),
+                           proofterm( prf_flatten, -3 ),
+                           proofterm( prf_deflocal, "Q", indhyp, 
+                           chain( { 
+                              proofterm( prf_forallelim, -1, { "Q"_unchecked } ),
+                              proofterm( prf_show, "UNFINISHED" )
+                           }) )} )
+               })
+             });
+
+#if 0
    auto fakecontr = proofterm( prf_fake, logic::op_false );
    auto exists = clausify( "initial0001"_assumption ); 
 
@@ -649,6 +673,24 @@ tests::bigproof( const logic::beliefstate& blfs, errorstack& err )
    else
       std::cout << "(evaluation of main proof failed)\n";
 #endif
+
+   auto proof = chain( 
+      { proofterm( prf_propcut, "goal"_unchecked ), 
+        orexistselim( -1, "notprop_prop", 
+        { propproof, 
+          chain(
+           { proofterm( prf_cut, -1 ),
+             orexistselim( -1, "false_true", { mainproof } )
+           }
+       ) })
+      });
+
+   proof. print( indentation( ), std::cout );
+
+   checkproof( blfs, proof, seq, err );
+   std::cout << "\n";
+   std::cout << "FINAL STATE\n";
+   seq. ugly( std::cout );
 }
 
 

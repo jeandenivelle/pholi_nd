@@ -13,30 +13,32 @@
 %option flatten { prf_flatten } => ind : ssize_t 
 
 %option copy { prf_copy } => level : std::string, ind : ssize_t
-%option erase { prf_erase } => ind : ssize_t
+%option forget { prf_forget } => ind : ssize_t
 
 %option orexistselim { prf_orexistselim } => ind : ssize_t, 
    name : std::string, [ branch : proofterm ] 
 
 %option expand { prf_expand } => 
    ind : ssize_t, ident : identifier, occ : size_t 
-
 %option expandlocal { prf_expandlocal } => 
    ind : ssize_t, name : std::string, occ : size_t
+
 %option betapi { prf_betapi } => ind : ssize_t
 
 %option forallintro { prf_forallintro } =>
    parent : proofterm, [ var : logic::vartype ]
+
 %option forallelim { prf_forallelim } => 
    ind : ssize_t, [ value : logic::term ] 
 
-%option define { prf_define } =>
-   name : std::string, val : logic::term, parent : proofterm
+%option deflocal { prf_deflocal } =>
+   name : std::string, val : logic::term, sub : proofterm 
 
 %option simplify { prf_simplify } => 
    // Always the complete toplevel.
 
 %option fake { prf_fake } => goal : logic::term
+
 %option show { prf_show } => comment : std::string
 
 %h_incl {
@@ -136,13 +138,13 @@
             return;
          }
 
-      case prf_define:
+      case prf_deflocal:
          {
-            auto def = view_define( );
+            auto def = view_deflocal( );
             out << ind << "define ";
             out << def. name( ) << " := " << def. val( ) << "\n";
             out << ind << "in\n";
-            def. parent( ). print( ind + 3, out );
+            def. sub( ). print( ind + 3, out );
             return;
          }
 
