@@ -589,8 +589,26 @@ tests::bigproof( const logic::beliefstate& blfs, errorstack& err )
                            proofterm( prf_flatten, -3 ),
                            proofterm( prf_deflocal, "Q", indhyp, 
                            chain( { 
-                              proofterm( prf_forallelim, -1, { "Q"_unchecked } ),
-                              proofterm( prf_show, "UNFINISHED" )
+                              proofterm( prf_forallelim, -1, 
+                                 { apply( "Q"_unchecked, { "s1"_unchecked, "s2"_unchecked } ) } ),
+                              proofterm( prf_flatten, -1 ),
+                              proofterm( prf_orexistselim, -1, "inductive",
+                              { 
+                                 chain( { proofterm( prf_show, "UNFINISHED1" ) } ),
+                                 chain( { proofterm( prf_show, "UNFINISHED2" ) } ),
+                                 chain( { proofterm( prf_expandlocal, -1, "Q", 0 ), 
+                                          proofterm( prf_betapi, -1 ),
+                                          proofterm( prf_flatten, -1 ),
+                                          proofterm( prf_orexistselim, -1, "final",
+                                          { chain( { proofterm( prf_flatten, -1 ),
+                                                     proofterm( prf_copy, "outermost", 2 ), 
+                                                     proofterm( prf_simplify ) } ),
+                                            chain( { proofterm( prf_flatten, -1 ),
+                                                     proofterm( prf_copy, "outermost", 3 ), 
+                                                     proofterm( prf_forallelim, -1, { "y1"_unchecked, "y2"_unchecked } ),
+                                                     proofterm( prf_simplify ) } )}),
+                                          proofterm( prf_show, "UNFINISHED3" ) } )
+                              } )
                            }) )} )
                })
              });

@@ -190,10 +190,10 @@ void calc::sequent::ugly( std::ostream& out ) const
    } 
 }
 
-#if 0
 
-void calc::sequent::pretty( std::ostream& out, bool showblocked ) const
+void calc::sequent::pretty( std::ostream& out ) const
 {
+#if 0
    out << "Sequent:\n";
    for( const auto& e : steps )
    {
@@ -214,7 +214,18 @@ void calc::sequent::pretty( std::ostream& out, bool showblocked ) const
          throw std::runtime_error( "doesnt know how to be pretty" );
       }
    }
+#endif
+   out << "Levels:\n";
+   for( const auto& l : lev )
+   {
+      out << "   level " << l. name << ", ";
+      out << "contextsize = " << l. contextsize << ":\n";
+      for( size_t i = 0; i != l. stack. size( ); ++ i )
+      {
+         out << "      " << i << " : ";
+         // pretty::print( out, blfs, 
+      }
+   }
 }
 
-#endif
 

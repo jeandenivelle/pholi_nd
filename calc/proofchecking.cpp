@@ -502,6 +502,8 @@ calc::checkproof( const logic::beliefstate& blfs,
          for( auto& fm : seq. back( ))
             fm = lift( std::move( fm ), 1 );
 
+         ++ seq. back( ). contextsize;
+
          seq. define( def. name( ), val, tp. value( ));
 
          auto sub = def. extr_sub( ); 
@@ -600,10 +602,14 @@ calc::checkproof( const logic::beliefstate& blfs,
          for( size_t i = 0; i != elim. size( ); ++ i )
          {
             auto inst = elim. extr_value(i);
-            auto tp = checkandresolve( blfs, err, seq. ctxt, inst );
+            auto tp = checktype( blfs, inst, seq, err );
 
-            if( ss != seq. ctxt. size( ))
-               throw std::logic_error( "size changed, should not happen" );
+            if( tp. has_value( ))
+               std::cout << tp. value( ) << "\n";
+            else
+               std::cout << "(no type)\n";
+
+            std::cout << "must be " << mainform. vars[i]. tp << "\n";
 
             if( ! tp. has_value( ) ||  
                 !equal( tp. value( ), mainform. vars[i]. tp ))

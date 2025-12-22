@@ -96,9 +96,7 @@ namespace calc
       size_t size( ) const { return lev. size( ); }
 
       void ugly( std::ostream& out ) const;  
-#if 0
-      void pretty( std::ostream& out, bool showblocked = false ) const;
-#endif
+      void pretty( std::ostream& out ) const;
 
       // The number returned can be used for restoring the context:
 
