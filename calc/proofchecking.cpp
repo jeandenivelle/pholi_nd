@@ -796,6 +796,7 @@ calc::checkproof( const logic::beliefstate& blfs,
          std::cout << "\n"; 
          std::cout << "proof state " << show. comment( ) << ":\n";
          seq. ugly( std::cout ); 
+         seq. pretty( std::cout, blfs );
          for( short unsigned int i = 0; i < 70; ++ i )
             std::cout << '-'; 
          std::cout << "\n\n"; 

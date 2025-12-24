@@ -1,7 +1,7 @@
 
 #include "sequent.h"
 #include "logic/pretty.h"
-
+#include "pretty.h"
 
 auto calc::sequent::level::at( ssize_t ind ) const 
    -> const forall< disjunction< exists< logic::term >>> & 
@@ -47,7 +47,13 @@ auto
 calc::sequent::level::find( ssize_t ind ) const
    -> level::const_iterator
 {
-   throw std::logic_error( "const find not implemented" );
+   if( !inrange( ind ))
+      throw std::range_error( "level: index out of range" );
+
+   if( ind >= 0 )
+      return stack. begin( ) + ind;
+   else
+      return stack. end( ) + ind;
 }
 
 size_t
@@ -191,39 +197,39 @@ void calc::sequent::ugly( std::ostream& out ) const
 }
 
 
-void calc::sequent::pretty( std::ostream& out ) const
+void 
+calc::sequent::pretty( std::ostream& out, const logic::beliefstate& blfs ) const
 {
-#if 0
    out << "Sequent:\n";
-   for( const auto& e : steps )
-   {
-      switch( e. sel( ))
-      {
-      case seq_belief:
-         {
-            auto bl = e. view_belief( ); 
-            if( showblocked || bl. visible( ))
-            { 
-               out << "   " << blfs. at( bl. name( ) ). ident( );
-               logic::pretty::print( out, blfs, blfs. at( bl. name( ) )); 
-            } 
-         }
-         break; 
-      default: 
-         std::cout << e. sel( ) << "\n";
-         throw std::runtime_error( "doesnt know how to be pretty" );
-      }
-   }
-#endif
+   logic::pretty::uniquenamestack names;
+
+   size_t db = 0;
+
    out << "Levels:\n";
-   for( const auto& l : lev )
+   for( const auto& lv : lev )
    {
-      out << "   level " << l. name << ", ";
-      out << "contextsize = " << l. contextsize << ":\n";
-      for( size_t i = 0; i != l. stack. size( ); ++ i )
+      out << "   level " << lv. name << ":\n";
+      while( db < lv. contextsize )
+      {
+         size_t ind = ctxt. size( ) - db - 1;
+         out << names. extend( ctxt. getname( ind ));
+         out << " : ";
+         logic::pretty::print( out, blfs, ctxt. gettype( db ), {0,0} ); 
+         if( auto p = defs. find( db ); p != defs. end( ))
+         {
+            names. restore( names. size( ) - 1 );
+            out << " := ";
+            logic::pretty::print( out, blfs, names, p -> second, {0,0} );
+            names. extend( ctxt. getname( ind ));
+         }
+         out << '\n';
+         ++ db;
+      }
+      for( size_t i = 0; i != lv. stack. size( ); ++ i )
       {
          out << "      " << i << " : ";
-         // pretty::print( out, blfs, 
+         pretty::print( out, blfs, names, lv. at(i) );
+         out << '\n'; 
       }
    }
 }

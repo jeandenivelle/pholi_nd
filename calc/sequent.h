@@ -96,7 +96,7 @@ namespace calc
       size_t size( ) const { return lev. size( ); }
 
       void ugly( std::ostream& out ) const;  
-      void pretty( std::ostream& out ) const;
+      void pretty( std::ostream& out, const logic::beliefstate& blfs ) const;
 
       // The number returned can be used for restoring the context:
 

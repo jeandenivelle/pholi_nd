@@ -595,7 +595,9 @@ tests::bigproof( const logic::beliefstate& blfs, errorstack& err )
                               proofterm( prf_orexistselim, -1, "inductive",
                               { 
                                  chain( { proofterm( prf_show, "UNFINISHED1" ) } ),
-                                 chain( { proofterm( prf_show, "UNFINISHED2" ) } ),
+                                 chain( { proofterm( prf_expand, -1, identifier( ) + "homrel", 0 ),
+                                          proofterm( prf_betapi, -1 ),
+                                          proofterm( prf_show, "MAINGOAL" ) } ),
                                  chain( { proofterm( prf_expandlocal, -1, "Q", 0 ), 
                                           proofterm( prf_betapi, -1 ),
                                           proofterm( prf_flatten, -1 ),
@@ -607,7 +609,7 @@ tests::bigproof( const logic::beliefstate& blfs, errorstack& err )
                                                      proofterm( prf_copy, "outermost", 3 ), 
                                                      proofterm( prf_forallelim, -1, { "y1"_unchecked, "y2"_unchecked } ),
                                                      proofterm( prf_simplify ) } )}),
-                                          proofterm( prf_show, "UNFINISHED3" ) } )
+                                          proofterm( prf_show, "FINISHED" ) } )
                               } )
                            }) )} )
                })
