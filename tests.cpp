@@ -228,9 +228,6 @@ void tests::pretty( const logic::beliefstate& blfs )
    tm = lambda( {{ "x1", OOO2T }, { "x2", O2T }, { "y1", O }, { "s", O }}, tm );
    tm = apply( tm, { term( op_exact, exact(21)), term( op_false ) } );
 
-   tm = term( op_kleene_and, { tm, term( op_exact, exact(25)), 0_db } );
-   tm = term( op_kleene_and, { 0_db, tm } );
-
    std::cout << "\n";
    std::cout << "pretty: ";
    std::cout << tm << "\n";
@@ -754,9 +751,8 @@ void tests::truthtables( )
    auto OO2T = type( type_func, T, { O, O } );
    auto OOO2T = type( type_func, T, { O, O, O } );
    auto tp = type( type_func, T, {O} );
+#if 0
    term from = exists( {{ "x", logic::type_obj }}, apply( "P"_unchecked, { 0_db } ) && apply( "Q"_unchecked, { 0_db } ));
-   auto b = term( op_kleene_and, { apply( "P"_unchecked, { 0_db } ), apply( "Q"_unchecked, { 0_db } ) } );
-   term into = term( op_kleene_exists, b, { { "x", logic::type_obj }} );
 
    logic::context ctxt;
    logic::beliefstate blfs;
@@ -767,5 +763,6 @@ void tests::truthtables( )
    pretty::print( std::cout, blfs, ctxt, into );
    std::cout << "\n\n";
    semantics::check_preceq( { { identifier( ) + "P", O2T }, { identifier( ) + "Q", O2T }}, from, into );
+#endif
 }
 

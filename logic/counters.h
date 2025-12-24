@@ -57,19 +57,8 @@ namespace logic
          }
          return;
 
-      case op_kleene_and:
-      case op_kleene_or:
-         {
-            auto kl = t. view_kleene( );
-            for( size_t i = 0; i != kl. size( ); ++ i )
-               traverse( counter, kl. sub(i), vardepth );
-         }
-         return;
-
       case op_forall:
       case op_exists:
-      case op_kleene_forall:
-      case op_kleene_exists:
          {
             auto q = t. view_quant( ); 
             traverse( counter, q. body( ), vardepth + q. size( ));

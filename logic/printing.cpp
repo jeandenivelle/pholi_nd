@@ -102,28 +102,8 @@ void logic::term::print( std::ostream& out ) const
       }
       return;
 
-   case op_kleene_and:
-   case op_kleene_or:
-      {
-         out << sel( ) << "(";
-         auto kl = view_kleene( );
-         for( size_t i = 0; i != kl. size( ); ++ i )
-         {
-            if( i != 0 )
-               out << ", ";
-            else
-               out << " ";
-
-            out << kl. sub(i); 
-         }
-         out << " )";
-      }
-      return;
-
    case op_forall:
    case op_exists:
-   case op_kleene_forall:
-   case op_kleene_exists:
       {
          auto p = view_quant( );
          out << sel( ) << "(";

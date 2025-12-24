@@ -205,32 +205,29 @@ calc::sequent::pretty( std::ostream& out, const logic::beliefstate& blfs ) const
 
    size_t db = 0;
 
+   auto pretty_out = pretty_printer( out, blfs, names );
+
    out << "Levels:\n";
    for( const auto& lv : lev )
    {
-      out << "   level " << lv. name << ":\n";
+      pretty_out << "   level " << lv. name << ":\n";
       while( db < lv. contextsize )
       {
          size_t ind = ctxt. size( ) - db - 1;
-         out << names. extend( ctxt. getname( ind ));
-         out << " : ";
-         logic::pretty::print( out, blfs, ctxt. gettype( db ), {0,0} ); 
+         pretty_out << "      " << names. extend( ctxt. getname( ind ));
+         pretty_out << " : " << ctxt. gettype( db ); 
          if( auto p = defs. find( db ); p != defs. end( ))
          {
             names. restore( names. size( ) - 1 );
-            out << " := ";
-            logic::pretty::print( out, blfs, names, p -> second, {0,0} );
+            pretty_out << " := " << ( p -> second );
             names. extend( ctxt. getname( ind ));
          }
-         out << '\n';
+         pretty_out << '\n';
          ++ db;
       }
       for( size_t i = 0; i != lv. stack. size( ); ++ i )
-      {
-         out << "      " << i << " : ";
-         pretty::print( out, blfs, names, lv. at(i) );
-         out << '\n'; 
-      }
+         pretty_out << "      " << i << " : " << lv. at(i) << '\n';
+
    }
 }
 

@@ -1,5 +1,6 @@
 #include "interpretation.h"
 
+#if 0
 semantics::value 
 semantics::lattice::top( logic::selector sel )
 {
@@ -356,3 +357,4 @@ semantics::check_preceq( const std::vector< identtype > & idents,
    }
 }
 
+#endif

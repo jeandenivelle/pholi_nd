@@ -74,22 +74,8 @@ namespace logic
          }
          return t;
 
-      case op_kleene_and:
-      case op_kleene_or:
-         {
-            auto kl = t. view_kleene( );
-            for( size_t i = 0; i != kl. size( ); ++ i )
-            {
-               kl. update_sub( i, 
-                         outermost( repl, kl. extr_sub(i), vardepth ));
-            }
-         }
-         return t;
-
       case op_forall:
       case op_exists:
-      case op_kleene_forall:
-      case op_kleene_exists: 
          {
             auto q = t. view_quant( ); 
             q. update_body( outermost( repl, q. extr_body( ),  
@@ -181,22 +167,8 @@ namespace logic
          }
          return t;
 
-      case op_kleene_and:
-      case op_kleene_or:
-         {  
-            auto kl = t. view_kleene( ); 
-            for( size_t i = 0; i != kl. size( ); ++ i )
-            {
-               kl. update_sub( i,
-                         outermost( repl, kl. extr_sub(i), vardepth ));
-            }
-         } 
-         return t;
- 
       case op_forall:
       case op_exists:
-      case op_kleene_forall:
-      case op_kleene_exists:
          {
             auto q = t. view_quant( );
             q. update_body( outermost( repl, q. extr_body( ), 

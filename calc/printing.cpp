@@ -31,7 +31,6 @@ calc::printing::pretty( std::ostream& out,
    logic::context ctxt;
    logic::pretty::print( out, seq. blfs, ctxt, tm );
 }
-#endif
 
 const char*
 calc::printing::viewpretty( logic::selector op )
@@ -51,3 +50,4 @@ calc::printing::viewpretty( logic::selector op )
 }
 
 
+#endif

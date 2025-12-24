@@ -76,17 +76,26 @@ includefile( logic::beliefstate& blfs,
 #include "calc/quantifiers.h"
 #include "calc/propositional.h"
 
+#include "calc/pretty.h"
 
 int main( int argc, char* argv[] )
 {
-   errorstack err;
  
+   errorstack err;
    logic::beliefstate blfs;  
    filehasher seen;
+
    includefile( blfs, seen, "examples/standard.phl", err ); 
    includefile( blfs, seen, "aa1", err );
    includefile( blfs, seen, "examples/natural.phl", err );
    // includefile( blfs, "examples/automata.phl" );
+
+   auto conj = calc::forall< calc::conjunction< logic::term >> (
+                  calc::conjunction( { 1_db, 2_db } ));
+
+   logic::pretty::uniquenamestack names;
+   auto print = calc::pretty_printer( std::cout, blfs, names );
+   print << conj << "\n";
 
    seen. print( std::cout );
 

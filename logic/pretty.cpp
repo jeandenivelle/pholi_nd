@@ -13,11 +13,9 @@ logic::pretty::getattractions( logic::selector sel )
       return { 0, 150 };
 
    case op_and:
-   case op_kleene_and: 
       return { 140, 141 };
 
    case op_or:
-   case op_kleene_or:
       return { 130, 131 };
 
    case op_implies:
@@ -36,8 +34,6 @@ logic::pretty::getattractions( logic::selector sel )
 
    case op_forall:
    case op_exists:
-   case op_kleene_forall:
-   case op_kleene_exists:
    case op_lambda:
    case op_let: 
       return { 0, 1 };
@@ -339,60 +335,8 @@ logic::pretty::print( std::ostream& out, const beliefstate& blfs,
       return;
    }
 
-   case op_kleene_and:
-   case op_kleene_or:
-      {
-         auto kl = t. view_kleene( );
-
-         if( kl. size( ) == 0 && t. sel( ) == op_kleene_and ) 
-         {
-            out << "TRUE"; 
-            return;
-         }
-
-         if( kl. size( ) == 0 && t. sel( ) == op_kleene_or )
-         {
-            out << "FALSE";
-            return;
-         }
-
-         // If we have one argument, we are invisible:
- 
-         if( kl. size( ) == 1 )
-         {
-            print( out, blfs, names, kl. sub(0), env );
-            return;
-         }
-
-         auto ourattr = getattractions( t. sel( ));
-         parentheses par;
-         par. check( ourattr, env );
-         if( par ) env = {0,0};
-         par. opening( out );
-
-         print( out, blfs, names, kl. sub(0), between( env, ourattr ));
-     
-         for( size_t i = 1; i != kl. size( ); ++ i )
-         {
-            if( t. sel( ) == op_kleene_and )
-               out << " && ";
-            else
-               out << " || ";
- 
-            print( out, blfs, names, kl. sub(i), 
-                   i + 1 != kl. size( ) ?
-                      between( ourattr, ourattr ) :
-                      between( ourattr, env ));
-         }
-
-         par. closing( out );
-         return; 
-      }
-
    case op_forall:
    case op_exists:
-   case op_kleene_forall:
-   case op_kleene_exists:
       {
          auto q = t. view_quant( );
          const size_t ss = names. size( );
@@ -405,17 +349,17 @@ logic::pretty::print( std::ostream& out, const beliefstate& blfs,
          
          par. opening( out );
 
-         if( t. sel( ) == op_forall || t. sel( ) == op_kleene_forall )
+         if( t. sel( ) == op_forall )
             out << "[";
-         if( t. sel( ) == op_exists || t. sel( ) == op_kleene_exists )
+         if( t. sel( ) == op_exists )
             out << "<";
 
          print( out, blfs, names, 
                 [&q]( size_t i ) { return q. var(i); }, q. size( ));
 
-         if( t. sel( ) == op_forall || t. sel( ) == op_kleene_forall )
+         if( t. sel( ) == op_forall )
             out << " ] ";
-         if( t. sel( ) == op_exists || t. sel( ) == op_kleene_exists )
+         if( t. sel( ) == op_exists )
             out << " > ";
 
          print( out, blfs, names, q. body( ), between( ourattr, env ));

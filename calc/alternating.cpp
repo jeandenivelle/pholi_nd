@@ -74,7 +74,7 @@ logic::term calc::apply_prop( const logic::term& f, polarity pol )
 }
 
 
-logic::selector 
+calc::kleene 
 calc::kleening( logic::selector sel, polarity pol )
 {
    using namespace logic;
@@ -86,17 +86,17 @@ calc::kleening( logic::selector sel, polarity pol )
       case op_false:
       case op_or:
       case op_lazy_or:
-         return op_kleene_or;
+         return kleene_or;
 
       case op_true:
       case op_and:
       case op_lazy_and:
-         return op_kleene_and;
+         return kleene_and;
 
       case op_forall:
-         return op_kleene_forall;
+         return kleene_forall;
       case op_exists:
-         return op_kleene_exists;
+         return kleene_exists;
       }
    }
 
@@ -107,17 +107,17 @@ calc::kleening( logic::selector sel, polarity pol )
       case op_false:
       case op_or:
       case op_lazy_or:
-         return op_kleene_and;
+         return kleene_and;
          
       case op_true:
       case op_and:
       case op_lazy_and:
-         return op_kleene_or;
+         return kleene_or;
 
       case op_forall:
-         return op_kleene_exists;
+         return kleene_exists;
       case op_exists:
-         return op_kleene_forall;
+         return kleene_forall;
       }
    }
    throw std::logic_error( "Kleening: operator not implemented" );
@@ -208,7 +208,7 @@ calc::extract( std::vector< logic::vartype > & ctxt,
 
    case op_false:
    case op_true:
-      if( kleening( fm. sel( ), pol ) == op_kleene_or )
+      if( kleening( fm. sel( ), pol ) == kleene_or )
       {
          conj. append( forall( ctxt, term( op_false )));
          return;
@@ -232,7 +232,7 @@ calc::extract( std::vector< logic::vartype > & ctxt,
    case op_lazy_and:
    case op_lazy_or:
       {
-         if( kleening( fm. sel( ), pol ) == op_kleene_and )
+         if( kleening( fm. sel( ), pol ) == kleene_and )
          {
             auto bin = fm. view_binary( );
             extract( ctxt, pol, bin. sub1( ), conj );
@@ -283,7 +283,7 @@ calc::extract( std::vector< logic::vartype > & ctxt,
    case op_forall:
    case op_exists:
       {
-         if( kleening( fm. sel( ), pol ) == op_kleene_forall ) 
+         if( kleening( fm. sel( ), pol ) == kleene_forall ) 
          {
             auto ss = ctxt. size( );
             appendvars( ctxt, fm );
@@ -326,7 +326,7 @@ calc::extract( std::vector< logic::vartype > & ctxt,
 
    case op_false:
    case op_true:
-      if( kleening( fm. sel( ), pol ) == op_kleene_and )
+      if( kleening( fm. sel( ), pol ) == kleene_and )
       {
          disj. append( exists( ctxt, term( op_true )));
          return;
@@ -350,7 +350,7 @@ calc::extract( std::vector< logic::vartype > & ctxt,
    case op_lazy_and:
    case op_lazy_or:
       {
-         if( kleening( fm. sel( ), pol ) == op_kleene_or )
+         if( kleening( fm. sel( ), pol ) == kleene_or )
          {
             auto bin = fm. view_binary( );
             extract( ctxt, pol, bin. sub1( ), disj );
@@ -403,7 +403,7 @@ calc::extract( std::vector< logic::vartype > & ctxt,
 
    case op_forall:
    case op_exists:
-      if( kleening( fm. sel( ), pol ) == op_kleene_exists )
+      if( kleening( fm. sel( ), pol ) == kleene_exists )
       {
          auto ss = ctxt. size( );
          appendvars( ctxt, fm );
@@ -606,126 +606,8 @@ calc::extract_prop( std::vector< logic::vartype > & ctxt,
 
 
 #if 0
-#if 0
-   if( isliteral(f))
-      return 0;
-
-   size_t inc = ischange( op, f. sel( ));
-      // What we will be increasing here.
- 
-   switch( f. sel( ))
-   {
-   case logic::op_kleene_and:
-   case logic::op_kleene_or:
-      {
-         size_t max = 1;
-         auto prop = f. view_kleene( );
-         for( size_t i = 0; i != prop. size( ); ++ i )
-         {
-            size_t m = alternation_rank( prop. sub(i), f. sel( )); 
-            if( m > max )
-               max = m;
-         }
-        
-         return max + inc; 
-      }
- 
-   case logic::op_kleene_forall:
-   case logic::op_kleene_exists:
-      {
-         auto quant = f. view_quant( );
-
-         size_t sub = alternation_rank( quant. body( ), f. sel( ));
-         if( sub == 0 ) 
-            sub = 1;
-
-         return sub + inc; 
-      }
-   default:
-      throw std::logic_error( "alternation rank : should be unreachable" );
-
-   }
-#endif
    throw std::logic_error( "rank: not in ANF" );
 }
 #endif
 
 
-#if 0
-
-logic::term
-calc::restrict_alternation( transformer& trans, logic::beliefstate& blfs,
-                logic::context& ctxt, logic::term f,
-                logic::selector op, unsigned int maxrank )
-{
-   if constexpr( false )
-   {
-      std::cout << "restrict alternation : " << f << "\n";
-      std::cout << "   " << op << "/" << maxrank << "\n";
-   }
-
-   if( isliteral(f))
-      return f;
-
-   // If we are not a literal, then the rank is >= 1.
-
-   bool dec = ischange( op, f. sel( ));
-      // True if we are going to decrease.
-
-   if( maxrank == 0 || ( dec && maxrank == 1 ))
-   {
-      auto pr = norm_debruijns(f);
-
-      auto restr = restriction( ctxt, pr. first );
-      logic::exact pred = trans. newpredsym( blfs, "p", restr );
-      trans. push( std::move( restr ), pred, pr. second,
-                   pol_neg, step_rank );
-      return application( logic::term( logic::op_exact, pred ), pr. first );
-   }
-
-   // We check if there is a level increase:
-
-    if( dec ) 
-      -- maxrank;
-
-   switch( f. sel( ))
-   {
-   case logic::op_kleene_and:
-   case logic::op_kleene_or:
-      {
-         auto prop = f. view_kleene( );
-         for( size_t i = 0; i != prop. size( ); ++ i )
-         {
-            prop. update_sub( i,
-               restrict_alternation( trans, blfs, ctxt, prop. extr_sub(i),
-                                     f. sel( ), maxrank ));
-         }
-         return f;
-      }
-
-   case op_lazy_and:
-   case op_lazy_or:
-   case op_lazy_implies:
-      return;
- 
-   case logic::op_kleene_forall:
-   case logic::op_kleene_exists:
-      {
-         auto q = f. view_quant( ); 
-         size_t ss = ctxt. size( );
-         for( size_t i = 0; i != q. size( ); ++ i )
-            ctxt. append( q. var(i). pref, q. var(i). tp );
-
-         q. update_body( 
-                restrict_alternation( trans, blfs, ctxt, q. extr_body( ), 
-                                      f. sel( ), maxrank ));
-
-         ctxt. restore(ss);
-         return f;
-      }
-   }
-
-   throw std::runtime_error( "splitalt: should be not reachable" );
-}
-
-#endif

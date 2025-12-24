@@ -9,6 +9,7 @@
 #include "quantifiers.h"
 
 #include "polarity.h"
+#include "kleene.h"
 
 namespace calc
 {
@@ -29,7 +30,7 @@ namespace calc
    using anf = conjunction< forall< dnf<F>>> ;
 
 
-   logic::selector kleening( logic::selector sel, polarity pol );
+   kleene kleening( logic::selector sel, polarity pol );
 
    anf< logic::term > flatten( anf< logic::term > conj );
    dnf< logic::term > flatten( dnf< logic::term > disj );

@@ -203,27 +203,8 @@ logic::operator <=> ( const term& t1, const term& t2 )
          return std::strong_ordering::equal; 
       }
 
-   case op_kleene_and:
-   case op_kleene_or:
-      {
-         auto kl1 = t1. view_kleene( );
-         auto kl2 = t2. view_kleene( );
-
-         if( auto c = kl1. size( ) <=> kl2. size( ); !is_eq(c))
-            return c;
-
-         for( size_t i = 0; i != kl1. size( ); ++ i )
-         {
-            if( auto c = kl1.sub(i) <=> kl2.sub(i); !is_eq(c))
-               return c;
-         }
-         return std::strong_ordering::equal;
-      }
- 
    case op_forall:
    case op_exists:
-   case op_kleene_forall:
-   case op_kleene_exists:
       {
          auto quant1 = t1. view_quant( );
          auto quant2 = t2. view_quant( );
@@ -373,27 +354,8 @@ logic::equal( const term& t1, size_t lift1,
                 equal( eq1. sub2( ), lift1, eq2. sub1( ), lift2, vardepth );
       }
 
-   case op_kleene_and:
-   case op_kleene_or:
-      {
-         auto kl1 = t1. view_kleene( );
-         auto kl2 = t2. view_kleene( );
-
-         if( kl1. size( ) != kl2. size( ))
-            return false;
-
-         for( size_t i = 0; i != kl1. size( ); ++ i )
-         {
-            if( !equal( kl1. sub(i), lift1, kl2. sub(i), lift2, vardepth ))
-               return false;
-         }
-         return true;
-      }
-
    case op_forall:
    case op_exists:
-   case op_kleene_forall:
-   case op_kleene_exists:
       {
          auto quant1 = t1. view_quant( );
          auto quant2 = t2. view_quant( );

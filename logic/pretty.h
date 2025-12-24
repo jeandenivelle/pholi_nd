@@ -85,11 +85,13 @@ namespace pretty
          // Don't change our state. 
    };
 
+
+
    void print( std::ostream& out, const beliefstate& blfs,
                uniquenamestack& names, 
                const std::function< vartype( size_t ) > & vt, size_t sz ); 
       // Prints a sequence of vartypes nicely, combining
-      // types wherever possible. This is used when printing
+      // types wherever possible. This can used when printing
       // a quantifier, a lambda, or a definition.
 
    // env. first is the left attraction of the operator to the right of us.

@@ -3,7 +3,6 @@
 #include "pretty.h"
 #include "cmp.h"
 
-
 void 
 logic::checkformula( const beliefstate& blfs, 
                      const identifier& name, term& fm, 
@@ -238,8 +237,7 @@ void logic::checkandresolve( beliefstate& everything, errorstack& err )
             checkformula( everything, blf. ident( ), fm, "formula", err );
             {
                auto univ = fm;
-               while( univ. sel( ) == op_forall ||
-                      univ. sel( ) == op_kleene_forall )
+               while( univ. sel( ) == op_forall )
                {
                   auto all = univ. view_quant( );
                   for( size_t i = 0; i != all. size( ); ++ i )
@@ -338,8 +336,6 @@ logic::replace_debruijn( indexedstack< std::string, size_t > & db, term t )
       }
    case op_forall:
    case op_exists:
-   case op_kleene_forall:
-   case op_kleene_exists: 
       {
          size_t dbsize = db. size( );
 
@@ -720,35 +716,8 @@ logic::checkandresolve( const beliefstate& blfs, errorstack& errors,
          return type( type_form ); 
       }
 
-   case op_kleene_and:
-   case op_kleene_or:
-      {
-         auto kl = t. view_kleene( ); 
-
-         for( size_t i = 0; i != kl. size( ); ++ i )
-         {
-            auto sub = kl. extr_sub(i);
-
-            auto tp = checkandresolve( blfs, errors, ctxt, sub );
-
-            if( tp. has_value( ) && tp. value( ). sel( ) != type_form )
-            {
-               auto err = errorheader( blfs, ctxt, t );
-               err << i << "-th argument of equality must be T, but is ";
-               pretty::print( err, blfs, tp. value( ), {0,0} );
-               errors. push( std::move( err ));
-            }
-
-            kl. update_sub( i, sub );
-         }
-
-         return type( type_form );
-      }
-
    case op_forall:
    case op_exists:
-   case op_kleene_forall:
-   case op_kleene_exists: 
       {
          auto quant = t. view_quant( );
 
