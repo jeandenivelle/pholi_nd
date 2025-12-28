@@ -86,7 +86,6 @@ namespace pretty
    };
 
 
-
    void print( std::ostream& out, const beliefstate& blfs,
                uniquenamestack& names, 
                const std::function< vartype( size_t ) > & vt, size_t sz ); 

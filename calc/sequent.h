@@ -14,6 +14,7 @@
 #include "logic/context.h"
 #include "propositional.h"
 #include "quantifiers.h"
+#include "pretty.h"
 
 namespace calc
 {
@@ -21,19 +22,19 @@ namespace calc
    struct sequent
    {
 
-      // An assumption level. We don't give names to
-      // individual formulas, only to assumption levels.
+      // A sequent consists of segments. A segment is created 
+      // either when new variables are assumed, or when new
+      // formulas are assumed. 
 
-      struct level
+      struct segment
       {
-         std::string name;   
-
          std::vector< forall< disjunction< exists< logic::term >>>> stack; 
+         std::string name; 
          size_t contextsize;   
-            // At the moment when the level was created.
+            // At the moment when the segment was created.
 
-         level( std::string name, size_t contextsize )
-            : name( std::move( name )), contextsize( contextsize )
+         segment( const std::string& name, size_t contextsize )
+            : name( name ), contextsize( contextsize )
          { }
 
          void push( forall< disjunction< exists< logic::term >>> form )
@@ -86,17 +87,17 @@ namespace calc
       std::map< size_t, logic::term > defs;
          // If a position in ctxt is a definition, its value is here.
 
-      std::vector< level > lev;
+      std::vector< segment > seg;
          // Stack of stacks of derived formulas. 
 
       sequent( ) noexcept { } 
       sequent( sequent&& ) noexcept = default;
       sequent& operator = ( sequent&& ) noexcept = default;
 
-      size_t size( ) const { return lev. size( ); }
+      size_t size( ) const { return seg. size( ); }
 
       void ugly( std::ostream& out ) const;  
-      void pretty( std::ostream& out, const logic::beliefstate& blfs ) const;
+      void pretty( pretty_printer& out ) const;
 
       // The number returned can be used for restoring the context:
 
@@ -105,25 +106,17 @@ namespace calc
       size_t define( const std::string& name, const logic::term& val,
                      const logic::type& tp );
 
-      void push_back( std::string name );
+      void push_back( const std::string& name );
       void pop_back( );
-         // Add or remove a level.
+         // Add or remove a segment.
 
-      const level& back( ) const;
-      level& back( );
+      const segment& back( ) const;
+      segment& back( );
 
-      const level& at( size_t ind ) const { return lev. at( ind ); }
-      level& at( size_t ind ) { return lev. at( ind ); }
+      const segment& at( size_t ind ) const { return seg. at( ind ); }
+      segment& at( size_t ind ) { return seg. at( ind ); }
    };
 
-
-   inline std::ostream& operator << ( std::ostream& out, const sequent& seq )
-   {
-      seq. ugly( out );
-      return out;
-   }
-
-   
 }
 
 #endif

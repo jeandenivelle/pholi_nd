@@ -12,14 +12,22 @@
 
 %option flatten { prf_flatten } => ind : ssize_t 
 
-%option copy { prf_copy } => level : std::string, ind : ssize_t
+%option copy { prf_copy } => segname : std::string, ind : ssize_t
 %option forget { prf_forget } => ind : ssize_t
 
 %option orexistselim { prf_orexistselim } => ind : ssize_t, 
    name : std::string, [ branch : proofterm ] 
 
+%option orexistselimintro { prf_orexistselimintro } => 
+   ind : ssize_t, alt : size_t, name : std::string, 
+   eigen : std::vector< std::string >, [ sub : proofterm ]
+      // If you don't combine these two rules, you get too many segments.
+      // Without explicit eigennames, you cannot refer to introduced 
+      // variables in proofs.
+
 %option expand { prf_expand } => 
    ind : ssize_t, ident : identifier, occ : size_t 
+
 %option expandlocal { prf_expandlocal } => 
    ind : ssize_t, name : std::string, occ : size_t
 
@@ -30,9 +38,10 @@
 
 %option forallelim { prf_forallelim } => 
    ind : ssize_t, [ value : logic::term ] 
+      // Replace ind by an instance.
 
 %option deflocal { prf_deflocal } =>
-   name : std::string, val : logic::term, sub : proofterm 
+   name : std::string, val : logic::term, [ sub : proofterm ]
 
 %option simplify { prf_simplify } => 
    // Always the complete toplevel.
@@ -106,6 +115,19 @@
             return;
          }
 
+      case prf_orexistselimintro: 
+         {
+            auto elim = view_orexistselimintro( );
+            out << ind << "orexistselimintro " << elim. ind( ) << "/";
+            out << elim. alt( ) << "\n";
+            out << ind << "name " << elim. name( ) << "\n";
+            for( size_t i = 0; i != elim. size( ); ++ i )
+            {
+               elim. sub(i). print( ind + 3, out ); 
+            }
+            return;
+         }
+
       case prf_expand:
          {
             auto exp = view_expand( );
@@ -133,7 +155,7 @@
       case prf_copy:
          {
             auto copy = view_copy( );
-            out << ind << "copy " << copy. level( );
+            out << ind << "copy " << copy. segname( );
             out << '[' << copy. ind( ) << "]\n";
             return;
          }
@@ -144,7 +166,10 @@
             out << ind << "define ";
             out << def. name( ) << " := " << def. val( ) << "\n";
             out << ind << "in\n";
-            def. sub( ). print( ind + 3, out );
+            for( size_t i = 0; i != def. size( ); ++ i )
+            {
+               def. sub(i). print( ind + 3, out );
+            }
             return;
          }
 

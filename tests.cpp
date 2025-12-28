@@ -394,7 +394,7 @@ void tests::smallproofs( const logic::beliefstate& blfs, errorstack& err )
       auto nr = seq. define( "goal",
                              blfs. at( f. front( )). view_form( ). fm( ),
                              logic::type( logic::type_form ));
-      seq. push_back( "goal" );
+      seq. push_back( "start" );
       seq. ugly( std::cout );
 
       auto split = orexistselim( -1, "propcut", 
@@ -584,8 +584,7 @@ tests::bigproof( const logic::beliefstate& blfs, errorstack& err )
                            proofterm( prf_expand, -3, identifier( ) + "minimal", 0 ),
                            proofterm( prf_betapi, -3 ),
                            proofterm( prf_flatten, -3 ),
-                           proofterm( prf_deflocal, "Q", indhyp, 
-                           chain( { 
+                           proofterm( prf_deflocal, "Q", indhyp, { 
                               proofterm( prf_forallelim, -1, 
                                  { apply( "Q"_unchecked, { "s1"_unchecked, "s2"_unchecked } ) } ),
                               proofterm( prf_flatten, -1 ),
@@ -594,7 +593,25 @@ tests::bigproof( const logic::beliefstate& blfs, errorstack& err )
                                  chain( { proofterm( prf_show, "UNFINISHED1" ) } ),
                                  chain( { proofterm( prf_expand, -1, identifier( ) + "homrel", 0 ),
                                           proofterm( prf_betapi, -1 ),
-                                          proofterm( prf_show, "MAINGOAL" ) } ),
+                                          proofterm( prf_flatten, -1 ),
+                                          proofterm( prf_show, "MAINGOAL" ),
+                                          proofterm( prf_orexistselimintro, -1, 1, "step", { "a1", "a2" }, 
+                                          {
+                                             proofterm( prf_flatten, -1 ),
+                                             proofterm( prf_expandlocal, -2, "Q", 0 ), 
+                                             proofterm( prf_betapi, -2 ),
+                                             proofterm( prf_flatten, -2 ),
+                                             proofterm( prf_show, "STEP" ),
+                                             proofterm( prf_orexistselimintro, -1, 0, "left", { },
+                                             {
+                                                proofterm( prf_copy, "step", 2 ), 
+                                                proofterm( prf_expandlocal, -1, "Q", 0 ),
+                                                proofterm( prf_betapi, -1 ),
+                                                proofterm( prf_flatten, -1 ),
+                                                proofterm( prf_show, "CLOSE" )
+                                             } )
+                                          }) 
+                                 }),
                                  chain( { proofterm( prf_expandlocal, -1, "Q", 0 ), 
                                           proofterm( prf_betapi, -1 ),
                                           proofterm( prf_flatten, -1 ),
@@ -608,7 +625,7 @@ tests::bigproof( const logic::beliefstate& blfs, errorstack& err )
                                                      proofterm( prf_simplify ) } )}),
                                           proofterm( prf_show, "FINISHED" ) } )
                               } )
-                           }) )} )
+                           } )} )
                })
              });
 

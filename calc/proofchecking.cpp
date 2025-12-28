@@ -20,6 +20,12 @@
 
 #include "logic/termoperators.h"
 
+void calc::printbar( std::ostream& out ) 
+{
+   for( short unsigned int i = 0; i < 70; ++ i )
+      out << '-';
+}
+
 auto 
 calc::lift( forall< disjunction< exists< logic::term >>> cls, size_t dist )
    -> forall< disjunction< exists< logic::term >>>
@@ -71,6 +77,7 @@ calc::checktype( const logic::beliefstate& blfs,
 
    if( !tp. has_value( ))
    {
+      seq. ugly( std::cout );
       std::cout << tm << "\n";
       throw std::logic_error( "term has no type" ); 
    }
@@ -134,6 +141,7 @@ calc::checkproof( const logic::beliefstate& blfs,
          return;
       }
 
+
    case prf_orexistselim:
       {
          auto elim = prf. view_orexistselim( ); 
@@ -157,7 +165,7 @@ calc::checkproof( const logic::beliefstate& blfs,
             // This will be our result.
 
          size_t ss = seq. ctxt. size( ); 
-         size_t nrlevels = seq. size( );
+         size_t nrsegments = seq. size( );
 
          if( disj. size( ) < elim. size( ))
          {
@@ -174,7 +182,7 @@ calc::checkproof( const logic::beliefstate& blfs,
             for( size_t v = 0; v != sub. vars. size( ); ++ v )
                seq. assume( sub. vars[v]. pref, sub. vars[v]. tp );
 
-            // Create a new assumption level:
+            // Create a new segment in the sequent:
 
             seq. push_back( elim. name( ));
 
@@ -284,8 +292,8 @@ calc::checkproof( const logic::beliefstate& blfs,
                concl. body. at(i). vars = std::move( quant );
             }
 
-            if( seq. size( ) != nrlevels + 1 )
-               throw std::logic_error( "something went wrong with the levels" );
+            if( seq. size( ) != nrsegments + 1 )
+               throw std::logic_error( "something went wrong with the segments" );
 
             seq. pop_back( );
             seq. ctxt. restore( ss );
@@ -311,6 +319,201 @@ calc::checkproof( const logic::beliefstate& blfs,
 
          seq. back( ). push( forall( std::move( result )));
 
+         return; 
+      }
+
+   case prf_orexistselimintro:
+      {
+         auto elim = prf. view_orexistselimintro( ); 
+         auto mainform = std::move( seq. back( ). at( elim. ind( )) );
+            // Should be a clause without variables.
+
+         std::cout << "mainform = " << mainform << "\n";
+         seq. back( ). erase( elim. ind( ));
+
+         if( mainform. vars. size( ))
+         {
+            std::cout << "orexistselimintro\n";
+            throw std::runtime_error( "there are universal variables" );
+         }
+
+         const dnf< logic::term > disj = std::move( mainform. body );
+            // It is a disjunction of existential formulas. 
+
+         dnf< logic::term > result;
+            // This will be our result.
+
+         size_t ss = seq. ctxt. size( ); 
+         size_t nrsegments = seq. size( );
+         if( elim. alt( ) >= disj. size( ))
+         {
+            std::cout << "CRASH IS IMMINENT\n";
+            throw std::runtime_error( "alternative too big" );
+         }
+
+         exists< logic::term > alt = 
+            std::move( disj. at( elim. alt( )) );
+            // Formula that we are going to assume.
+            // We can safely move it I think.
+
+         std::cout << "alt = " << alt << "\n";
+
+         // Assume the existentially quantified variables of alt:
+
+         for( size_t v = 0; v != alt. vars. size( ); ++ v )
+         {
+            if( v < elim. eigen( ). size( ))
+               seq. assume( elim. eigen( ). at(v), alt. vars[v]. tp );
+            else
+               seq. assume( alt. vars[v]. pref, alt. vars[v]. tp );
+         }
+
+         // Create a new segment in the sequent:
+
+         seq. push_back( elim. name( ));
+
+         // Assume the body of alt (without the variables):
+ 
+         seq. back( ). push( forall( disjunction{ exists( alt. body ) } ));
+
+         for( size_t i = 0; i != elim. size( ); ++ i )
+         {
+            auto subproof = elim. extr_sub(i);
+            checkproof( blfs, subproof, seq, err );
+            elim. update_sub( i, std::move( subproof ));
+         }
+
+         seq. ugly( std::cout ); 
+#if 0
+            std::cout << "==============================\n";
+            std::cout << "disjunction is " << disj << "\n";
+            std::cout << "number options = " << disj. size( ) << "\n";
+            std::cout << "choice was: " << i << "\n";
+
+#if 0
+            // Was part of testing. Should be completely removed later:
+
+            seq. assume( "hhhh", logic::type( logic::type_form ));
+            seq. assume( "ssss", logic::type( logic::type_obj ));
+
+            seq. ugly( std::cout );  
+            std::cout << "\n";
+#endif
+
+            // We use the last formula. If there are no formulas, 
+            // it is an error:
+
+            if( seq. back( ). size( ) == 0 )
+            {
+               throw std::runtime_error( "orexistselim: No result" );
+            }
+
+            auto concl = std::move( seq. back( ). at( -1 ));
+               // Conclusion of our current assumption.
+
+            if( concl. vars. size( ))
+            {
+               std::cout << concl << "\n";
+               throw std::runtime_error( "orexistselim: universal variables in conclusion" );
+            }
+
+            // concl is now a forall without variables, 
+            // containing a disjunction:
+
+#if 0
+            // This was used for testing.
+
+            concl. body = disjunction( 
+               {
+                  exists( logic::forall( {{ "A", logic::type( logic::type_form ) }}, apply( 5_db, { 3_db, 4_db } ))), 
+                  exists( {{ "X", logic::type( logic::type_form ) },
+                           { "Y", logic::type( logic::type_obj ) }},
+                          apply( "f"_unchecked, { 0_db, 1_db, 2_db, 5_db, 6_db, 7_db } ))
+               } );
+
+            std::cout << "concl = " << concl << "\n";
+            std::cout << "ss = " << ss << "\n";
+#endif
+
+            // concl. body( ) is a disjunction of existentially
+            // quantified formulas. For each disjunct separately,
+            // we determine its free variables, and 
+            // add existential quantifiers for them.
+
+            for( size_t i = 0; i != concl. body. size( ); ++ i )
+            {
+               // We construct a substitution that normalizes
+               // the free variables in concl. body. at(i).
+
+               // In order to do that, we first collect 
+               // the free variables of concl. body. at(i) : 
+ 
+               logic::debruijn_counter vars;
+               traverse( vars, concl. body. at(i), 0 );
+
+               // We don't care about all free variables, only about the 
+               // ones that we assumed by ourselves. 
+               // We go through our assumptions, check if they occur
+               // in vars. We create a normalizing subsitution for those. 
+
+               auto norm = logic::normalizer( seq. ctxt. size( ) - ss );
+
+               for( size_t v = 0; v + ss < seq. ctxt. size( ); ++ v )
+               {
+                  if( vars. contains(v))
+                     norm. append(v);
+               }
+ 
+               // apply norm on the body:
+
+               concl. body. at(i) = 
+                  outermost( norm, std::move( concl. body. at(i)), 0 );
+
+               std::vector< logic::vartype > quant;
+
+               // These are the assumptions that we are about to drop:
+
+               for( size_t v = seq. ctxt. size( ) - ss; v -- ; )
+               {
+                  if( vars. contains(v))
+                     quant. push_back( { seq. ctxt. getname(v),
+                                         seq. ctxt. gettype(v) } );                          
+               }
+
+               for( auto& q : concl. body. at(i). vars )
+                  quant. push_back( std::move(q));
+
+               concl. body. at(i). vars = std::move( quant );
+            }
+
+            if( seq. size( ) != nrsegments + 1 )
+               throw std::logic_error( "something went wrong with the segments" );
+
+            seq. pop_back( );
+            seq. ctxt. restore( ss );
+
+            // concl still is a forall without variables:
+
+            for( auto& d : concl. body )
+               result. append( std::move(d));
+         }
+
+         // If there are more disjunctions than cases in the proof,
+         // we copy the missing disjuncts unchanged:
+
+         if( elim. size( ) < disj. size( ))
+         {
+            std::cout << elim. size( ) << " " << disj. size( ) << "\n";
+
+            for( size_t i = elim. size( ); i < disj. size( ); ++ i )
+               result. append( std::move( disj. at(i)) );
+         }
+
+         atp::simplify( result );
+
+         seq. back( ). push( forall( std::move( result )));
+#endif
+         throw std::logic_error( "stopping: collect it all together" );
          return; 
       }
 
@@ -427,7 +630,7 @@ calc::checkproof( const logic::beliefstate& blfs,
          }
 
          if( seq. back( ). contextsize != seq. ctxt. size( ))
-            throw std::logic_error( "size of context does not fit to level" );
+            throw std::logic_error( "size of context does not fit to segment" );
 
          auto def = localexpander( seq. ctxt. size( ) - var - 1,  
                                    p -> second, 
@@ -459,22 +662,22 @@ calc::checkproof( const logic::beliefstate& blfs,
          auto copy = prf. view_copy( );
 
          // This is not terribly efficient, but I think
-         // that the number of levels in a proof is logarithmic in its
+         // that the number of segments in a proof is logarithmic in its
          // size.
 
-         for( size_t lev = 0; lev != seq. size( ); ++ lev )
+         for( size_t seg = 0; seg != seq. size( ); ++ seg )
          {
-            if( seq. at( lev ). name == copy. level( ))
+            if( seq. at( seg ). name == copy. segname( ))
             { 
-               if( !seq. at( lev ). inrange( copy. ind( )))
+               if( !seq. at( seg ). inrange( copy. ind( )))
                   throw std::logic_error( "copy: wrong index" );
 
-               auto fm = seq. at( lev ). at( copy. ind( ));
+               auto fm = seq. at( seg ). at( copy. ind( ));
                   // Copy, not move!
 
                seq. back( ). push( lift( std::move( fm ),
                                       seq. ctxt. size( ) -
-                                      seq. at( lev ). contextsize ));
+                                      seq. at( seg ). contextsize ));
 
                return;  // succesful return. 
             }
@@ -506,12 +709,14 @@ calc::checkproof( const logic::beliefstate& blfs,
 
          seq. define( def. name( ), val, tp. value( ));
 
-         auto sub = def. extr_sub( ); 
-         checkproof( blfs, sub, seq, err );
-         def. update_sub( std::move( sub ));
+         for( size_t i = 0; i != def. size( ); ++ i )
+         {
+            auto sub = def. extr_sub(i); 
+            checkproof( blfs, sub, seq, err );
+            def. update_sub( i, std::move( sub ));
+         }
 
-         // We need to apply a substitution.
-
+         // We need to apply a substitution:
 #if 0
          size_t seqsize = seq. size( );
          seq. define( def. name( ), val, tp. value( ));
@@ -585,6 +790,8 @@ calc::checkproof( const logic::beliefstate& blfs,
 
          auto mainform = std::move( seq. back( ). at( elim. ind( )));
             // We will later put the instance at this place.
+            // If you want more than one instantiation of the formula,
+            // you must copy the formula first.
 
          if( mainform. vars. size( ) < elim. size( ))
          {
@@ -791,15 +998,12 @@ calc::checkproof( const logic::beliefstate& blfs,
    case prf_show:
       {
          auto show = prf. view_show( ); 
-         for( short unsigned int i = 0; i < 70; ++ i )
-            std::cout << '-';
+         printbar( std::cout );
          std::cout << "\n"; 
+
          std::cout << "proof state " << show. comment( ) << ":\n";
-         seq. ugly( std::cout ); 
-         seq. pretty( std::cout, blfs );
-         for( short unsigned int i = 0; i < 70; ++ i )
-            std::cout << '-'; 
-         std::cout << "\n\n"; 
+         auto out = pretty_printer( std::cout, blfs );
+         seq. pretty( out );
          return;
       } 
 

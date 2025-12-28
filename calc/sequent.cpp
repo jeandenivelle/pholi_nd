@@ -1,41 +1,40 @@
 
 #include "sequent.h"
 #include "logic/pretty.h"
-#include "pretty.h"
 
-auto calc::sequent::level::at( ssize_t ind ) const 
+auto calc::sequent::segment::at( ssize_t ind ) const 
    -> const forall< disjunction< exists< logic::term >>> & 
 {
    auto it = find( ind );
    return *it; 
 }
 
-auto calc::sequent::level::at( ssize_t ind ) 
+auto calc::sequent::segment::at( ssize_t ind ) 
    -> forall< disjunction< exists< logic::term >>> &
 {
    auto it = find( ind );
    return *it; 
 }
 
-void calc::sequent::level::erase( ssize_t ind )
+void calc::sequent::segment::erase( ssize_t ind )
 {
    auto it = find( ind );
    stack. erase( it );
 }
 
 bool
-calc::sequent::level::inrange( ssize_t ind ) const
+calc::sequent::segment::inrange( ssize_t ind ) const
 {
    ssize_t ss = stack. size( );
    return ind >= -ss && ind < ss;
 }
 
 auto
-calc::sequent::level::find( ssize_t ind ) 
-   -> level::iterator
+calc::sequent::segment::find( ssize_t ind ) 
+   -> segment::iterator
 {
    if( !inrange( ind ))
-      throw std::range_error( "level: index out of range" );
+      throw std::range_error( "segment: index out of range" );
 
    if( ind >= 0 )
       return stack. begin( ) + ind;
@@ -44,11 +43,11 @@ calc::sequent::level::find( ssize_t ind )
 }
 
 auto
-calc::sequent::level::find( ssize_t ind ) const
-   -> level::const_iterator
+calc::sequent::segment::find( ssize_t ind ) const
+   -> segment::const_iterator
 {
    if( !inrange( ind ))
-      throw std::range_error( "level: index out of range" );
+      throw std::range_error( "segment: index out of range" );
 
    if( ind >= 0 )
       return stack. begin( ) + ind;
@@ -76,33 +75,33 @@ calc::sequent::define( const std::string& name,
    return nr;
 }
 
-void calc::sequent::push_back( std::string name )
+void calc::sequent::push_back( const std::string& name )
 {
-   lev. push_back( level( std::move( name ),  ctxt. size( )));
+   seg. push_back( segment( name,  ctxt. size( )));
 }
 
 void calc::sequent::pop_back( )
 {
-   if( lev. size( ) == 0 )
+   if( seg. size( ) == 0 )
       throw std::logic_error( "pop_back( ) : nothing to pop" );
 
-   lev. pop_back( );
+   seg. pop_back( );
 }
 
-const calc::sequent::level& calc::sequent::back( ) const 
+const calc::sequent::segment& calc::sequent::back( ) const 
 {
-   if( lev. size( ) == 0 )
-      throw std::logic_error( "back: there are no levels" );
+   if( seg. size( ) == 0 )
+      throw std::logic_error( "back: there are no segments" );
 
-   return lev. back( );
+   return seg. back( );
 }
 
-calc::sequent::level& calc::sequent::back( )
+calc::sequent::segment& calc::sequent::back( )
 {  
-   if( lev. size( ) == 0 )
-      throw std::logic_error( "back: there are no levels" );
+   if( seg. size( ) == 0 )
+      throw std::logic_error( "back: there are no segments" );
 
-   return lev. back( );
+   return seg. back( );
 }
 
 
@@ -123,30 +122,6 @@ calc::sequent::getexactname( size_t i ) const
    std::cout << steps[i]. sel( ) << "\n";
    throw std::logic_error( "cannot get exact name" );
 }
-
-#if 0
-void
-calc::sequent::addformula( std::string_view namebase,
-                           const logic::term& f,
-                           unsigned int par1, unsigned int par2,
-                           unsigned int br, unsigned int nr )
-{
-   if( namebase. empty( ))
-      throw std::logic_error( "new formula: namebase cannot be empty" );
-
-   auto name = get_fresh_ident( namebase );
-   auto ex = blfs. append( logic::belief( logic::bel_form, name, f ));
-   bool anf = isinanf(f); 
-   size_t rank = 0;
-   if( anf )
-   {
-      rank = alternation_rank(f);
-   }
-   ext. push_back( extension( ext_initial, false, "", 
-                              ex, f, anf, rank, par1, par2, br, nr ));
-}
-
-#endif
 
 
 void calc::sequent::restore( size_t ss )
@@ -186,48 +161,43 @@ void calc::sequent::ugly( std::ostream& out ) const
       out << "   #" << def. first << " := " << def. second << "\n";
   
    out << "\n"; 
-   out << "Levels:\n";
-   for( const auto& l : lev ) 
+   out << "Segments:\n";
+   for( const auto& s : seg ) 
    {
-      out << "   level " << l. name << ", ";
-      out << "contextsize = " << l. contextsize << ":\n";
-      for( size_t i = 0; i != l. stack. size( ); ++ i )
-         out << "      " << i << " : " << l. stack[i] << "\n";
+      out << "   segment " << s. name << ", ";
+      out << "contextsize = " << s. contextsize << ":\n";
+      for( size_t i = 0; i != s. stack. size( ); ++ i )
+         out << "      " << i << " : " << s. stack[i] << "\n";
    } 
 }
 
 
 void 
-calc::sequent::pretty( std::ostream& out, const logic::beliefstate& blfs ) const
+calc::sequent::pretty( pretty_printer& out ) const
 {
    out << "Sequent:\n";
-   logic::pretty::uniquenamestack names;
 
    size_t db = 0;
 
-   auto pretty_out = pretty_printer( out, blfs, names );
-
-   out << "Levels:\n";
-   for( const auto& lv : lev )
+   for( const auto& s : seg )
    {
-      pretty_out << "   level " << lv. name << ":\n";
-      while( db < lv. contextsize )
+      out << "   segment " << s. name << ":\n";
+      while( db < s. contextsize )
       {
          size_t ind = ctxt. size( ) - db - 1;
-         pretty_out << "      " << names. extend( ctxt. getname( ind ));
-         pretty_out << " : " << ctxt. gettype( ind ); 
+         out << "      " << out. names. extend( ctxt. getname( ind ));
+         out << " : " << ctxt. gettype( ind ); 
          if( auto p = defs. find( db ); p != defs. end( ))
          {
-            names. restore( names. size( ) - 1 );
-            pretty_out << " := " << ( p -> second );
-            names. extend( ctxt. getname( ind ));
+            out. names. restore( out. names. size( ) - 1 );
+            out << " := " << ( p -> second );
+            out. names. extend( ctxt. getname( ind ));
          }
-         pretty_out << '\n';
+         out << '\n';
          ++ db;
       }
-      for( size_t i = 0; i != lv. stack. size( ); ++ i )
-         pretty_out << "      " << i << " : " << lv. at(i) << '\n';
-
+      for( size_t i = 0; i != s. stack. size( ); ++ i )
+         out << "      " << i << " : " << s. at(i) << '\n';
    }
 }
 

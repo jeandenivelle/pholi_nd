@@ -16,14 +16,12 @@ namespace calc
    {
       std::ostream& out;
       const logic::beliefstate& blfs;
-      logic::pretty::uniquenamestack& names;
+      logic::pretty::uniquenamestack names;
 
       pretty_printer( std::ostream& out,
-                      const logic::beliefstate& blfs,
-                      logic::pretty::uniquenamestack& names )
+                      const logic::beliefstate& blfs )
          : out( out ),
-           blfs( blfs ),
-           names( names )
+           blfs( blfs ) 
       { }  
    };
 
@@ -36,13 +34,23 @@ namespace calc
       return print;
    }
 
-   inline pretty_printer&
-   operator << ( pretty_printer& print, 
-                 const std::vector< logic::vartype > & vars )
+   template< typename T >
+   void printquantifier( pretty_printer& print, 
+                         const char* qname, 
+                         const std::vector< logic::vartype > & vars,
+                         const T& body )
    {
-      logic::pretty::print( print. out, print. blfs, print. names,
-         [&vars]( size_t i ) { return vars. at(i); }, vars. size( ));
-      return print;
+      size_t ns = print. names. size( );
+      if( vars. size( ))
+      {
+         print << qname;
+         logic::pretty::print( print. out, print. blfs, print. names,
+            [&vars]( size_t i ) { return vars. at(i); }, vars. size( ));
+         print << ' ';
+      }
+
+      print << body;
+      print. names. restore( ns );
    }
 
    inline pretty_printer&
@@ -92,17 +100,13 @@ namespace calc
       }
       print << " }";
       return print;
-
    }
 
    template< typename F > 
    pretty_printer& 
    operator << ( pretty_printer& print, const forall<F> & all )
    {
-      if( all. vars. size( ))
-         print << "FORALL" << all. vars << " ";
-
-      print << all. body; 
+      printquantifier( print, "FORALL", all. vars, all. body );
       return print;
    }
 
@@ -110,13 +114,9 @@ namespace calc
    pretty_printer&
    operator << ( pretty_printer& print, const exists<F> & ex )
    {
-      if( ex. vars. size( ))
-         print << "EXISTS" << ex. vars << " ";
-
-      print << ex. body;
+      printquantifier( print, "EXISTS", ex. vars, ex. body );
       return print;
    }
-
 
 }
 

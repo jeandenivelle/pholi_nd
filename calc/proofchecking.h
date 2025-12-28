@@ -13,6 +13,8 @@
 
 namespace calc
 {
+   void printbar( std::ostream& out );
+
    errorstack::builder
    errorheader( const sequent& seq, std::string_view rule );
 

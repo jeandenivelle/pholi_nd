@@ -94,7 +94,7 @@ int main( int argc, char* argv[] )
                   calc::conjunction( { 1_db, 2_db } ));
 
    logic::pretty::uniquenamestack names;
-   auto print = calc::pretty_printer( std::cout, blfs, names );
+   auto print = calc::pretty_printer( std::cout, blfs );
    print << conj << "\n";
 
    seen. print( std::cout );
