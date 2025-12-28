@@ -100,7 +100,7 @@ namespace calc
    operator << ( pretty_printer& print, const forall<F> & all )
    {
       if( all. vars. size( ))
-         print << "ALL" << all. vars << " ";
+         print << "FORALL" << all. vars << " ";
 
       print << all. body; 
       return print;

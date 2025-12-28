@@ -119,10 +119,11 @@ namespace calc
 
    inline std::ostream& operator << ( std::ostream& out, const sequent& seq )
    {
-      throw std::runtime_error( "<< not implemented" );
       seq. ugly( out );
       return out;
    }
+
+   
 }
 
 #endif

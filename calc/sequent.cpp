@@ -215,7 +215,7 @@ calc::sequent::pretty( std::ostream& out, const logic::beliefstate& blfs ) const
       {
          size_t ind = ctxt. size( ) - db - 1;
          pretty_out << "      " << names. extend( ctxt. getname( ind ));
-         pretty_out << " : " << ctxt. gettype( db ); 
+         pretty_out << " : " << ctxt. gettype( ind ); 
          if( auto p = defs. find( db ); p != defs. end( ))
          {
             names. restore( names. size( ) - 1 );
