@@ -141,7 +141,6 @@ calc::checkproof( const logic::beliefstate& blfs,
          return;
       }
 
-
    case prf_orexistselim:
       {
          auto elim = prf. view_orexistselim( ); 
@@ -327,8 +326,8 @@ calc::checkproof( const logic::beliefstate& blfs,
          auto elim = prf. view_orexistselimintro( ); 
          auto mainform = std::move( seq. back( ). at( elim. ind( )) );
             // Should be a clause without variables.
+         std::cout << "mainform = " << mainform << "\n\n\n";
 
-         std::cout << "mainform = " << mainform << "\n";
          seq. back( ). erase( elim. ind( ));
 
          if( mainform. vars. size( ))
@@ -337,17 +336,15 @@ calc::checkproof( const logic::beliefstate& blfs,
             throw std::runtime_error( "there are universal variables" );
          }
 
-         const dnf< logic::term > disj = std::move( mainform. body );
+         dnf< logic::term > disj = std::move( mainform. body );
             // It is a disjunction of existential formulas. 
-
-         dnf< logic::term > result;
-            // This will be our result.
 
          size_t ss = seq. ctxt. size( ); 
          size_t nrsegments = seq. size( );
          if( elim. alt( ) >= disj. size( ))
          {
-            std::cout << "CRASH IS IMMINENT\n";
+            std::cout << "disj = " << disj << "\n";
+            std::cout << elim. alt( ) << "\n"; 
             throw std::runtime_error( "alternative too big" );
          }
 
@@ -385,12 +382,6 @@ calc::checkproof( const logic::beliefstate& blfs,
 
          seq. ugly( std::cout ); 
 #if 0
-            std::cout << "==============================\n";
-            std::cout << "disjunction is " << disj << "\n";
-            std::cout << "number options = " << disj. size( ) << "\n";
-            std::cout << "choice was: " << i << "\n";
-
-#if 0
             // Was part of testing. Should be completely removed later:
 
             seq. assume( "hhhh", logic::type( logic::type_form ));
@@ -400,25 +391,25 @@ calc::checkproof( const logic::beliefstate& blfs,
             std::cout << "\n";
 #endif
 
-            // We use the last formula. If there are no formulas, 
-            // it is an error:
+         // We use the last formula. If there are no formulas, 
+         // it is an error:
 
-            if( seq. back( ). size( ) == 0 )
-            {
-               throw std::runtime_error( "orexistselim: No result" );
-            }
+         if( seq. back( ). size( ) == 0 )
+         {
+            throw std::runtime_error( "orexistselimintro: No result" );
+         }
 
-            auto concl = std::move( seq. back( ). at( -1 ));
-               // Conclusion of our current assumption.
+         auto concl = std::move( seq. back( ). at( -1 ));
+            // Conclusion of our current assumption.
 
-            if( concl. vars. size( ))
-            {
-               std::cout << concl << "\n";
-               throw std::runtime_error( "orexistselim: universal variables in conclusion" );
-            }
+         if( concl. vars. size( ))
+         {
+            std::cout << concl << "\n";
+            throw std::runtime_error( "orexistselimintro: universal variables in conclusion" );
+         }
 
-            // concl is now a forall without variables, 
-            // containing a disjunction:
+         // concl is a forall without variables, 
+         // containing a disjunctive normal form.
 
 #if 0
             // This was used for testing.
@@ -435,19 +426,20 @@ calc::checkproof( const logic::beliefstate& blfs,
             std::cout << "ss = " << ss << "\n";
 #endif
 
-            // concl. body( ) is a disjunction of existentially
-            // quantified formulas. For each disjunct separately,
-            // we determine its free variables, and 
-            // add existential quantifiers for them.
+         // concl. body( ) is a disjunction of existentially
+         // quantified formulas. For each disjunct separately,
+         // we determine its free variables, and 
+         // add existential quantifiers for them.
 
-            for( size_t i = 0; i != concl. body. size( ); ++ i )
-            {
-               // We construct a substitution that normalizes
-               // the free variables in concl. body. at(i).
+         for( size_t i = 0; i != concl. body. size( ); ++ i )
+         {
+            // We construct a substitution that normalizes
+            // the free variables in concl. body. at(i).
 
-               // In order to do that, we first collect 
-               // the free variables of concl. body. at(i) : 
+            // In order to do that, we first collect 
+            // the free variables of concl. body. at(i) : 
  
+#if 0
                logic::debruijn_counter vars;
                traverse( vars, concl. body. at(i), 0 );
 
@@ -484,36 +476,30 @@ calc::checkproof( const logic::beliefstate& blfs,
                   quant. push_back( std::move(q));
 
                concl. body. at(i). vars = std::move( quant );
-            }
-
-            if( seq. size( ) != nrsegments + 1 )
-               throw std::logic_error( "something went wrong with the segments" );
-
-            seq. pop_back( );
-            seq. ctxt. restore( ss );
-
-            // concl still is a forall without variables:
-
-            for( auto& d : concl. body )
-               result. append( std::move(d));
-         }
-
-         // If there are more disjunctions than cases in the proof,
-         // we copy the missing disjuncts unchanged:
-
-         if( elim. size( ) < disj. size( ))
-         {
-            std::cout << elim. size( ) << " " << disj. size( ) << "\n";
-
-            for( size_t i = elim. size( ); i < disj. size( ); ++ i )
-               result. append( std::move( disj. at(i)) );
-         }
-
-         atp::simplify( result );
-
-         seq. back( ). push( forall( std::move( result )));
 #endif
-         throw std::logic_error( "stopping: collect it all together" );
+            throw std::logic_error( "this loop is not finished" );
+         }
+
+         if( seq. size( ) != nrsegments + 1 )
+            throw std::logic_error( "something went wrong with the segments" );
+
+         seq. pop_back( );
+         seq. ctxt. restore( ss );
+
+         atp::simplify( concl. body );
+
+         for( size_t i = 0; i != disj. size( ); ++ i )
+         {
+            if( i == elim. alt( )) 
+            {
+               for( auto& b : concl. body )
+                  mainform. body. append( std::move(b));
+            }
+            else
+               mainform. body. append( disj. at(i));
+         }
+
+         seq. back( ). push( std::move( mainform ));
          return; 
       }
 
@@ -683,6 +669,16 @@ calc::checkproof( const logic::beliefstate& blfs,
             }
          }
          throw std::logic_error( " not found " );
+      }
+
+   case prf_erase: 
+      {
+         auto er = prf. view_erase( );
+         if( !seq. back( ). inrange( er. ind( )))
+            throw std::logic_error( "erase: wrong index" );
+
+         seq. back( ). erase( er. ind( ));
+         return;
       }
 
    case prf_deflocal: 
@@ -872,36 +868,6 @@ calc::checkproof( const logic::beliefstate& blfs,
          return;  
       }
 #if 0
-   case prf_andintro:
-      {
-         auto intro = prf. view_andintro( ); 
-
-         auto result = 
-            logic::term( logic::op_kleene_and,
-                         std::initializer_list< logic::term > ( ));
-
-         for( size_t i = 0; i != intro. size( ); ++ i )
-         {
-            auto fm = proofcheck( intro. parent(i), seq, err );
-
-            // There is no point in continuing I think:
-
-            if( !fm. has_value( ))
-               return fm; 
-
-            auto conj = optform( std::move( fm ), "andintro", seq, err );
-            conj. musthave( logic::op_kleene_and );
-            if( !conj )
-               return { };
-
-            auto kl = conj. value( ). view_kleene( );
-
-            for( size_t i = 0; i != kl. size( ); ++ i )
-               result. view_kleene( ). push_back( kl. sub(i));
-         }
-
-         return result;
-      }
 
    case prf_select:
       {

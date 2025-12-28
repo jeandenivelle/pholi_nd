@@ -13,7 +13,7 @@
 %option flatten { prf_flatten } => ind : ssize_t 
 
 %option copy { prf_copy } => segname : std::string, ind : ssize_t
-%option forget { prf_forget } => ind : ssize_t
+%option erase { prf_erase } => ind : ssize_t
 
 %option orexistselim { prf_orexistselim } => ind : ssize_t, 
    name : std::string, [ branch : proofterm ] 
@@ -42,6 +42,9 @@
 
 %option deflocal { prf_deflocal } =>
    name : std::string, val : logic::term, [ sub : proofterm ]
+
+%option import { prf_import } =>
+   ident : identifier, [ value : logic::term ]
 
 %option simplify { prf_simplify } => 
    // Always the complete toplevel.
@@ -157,6 +160,12 @@
             auto copy = view_copy( );
             out << ind << "copy " << copy. segname( );
             out << '[' << copy. ind( ) << "]\n";
+            return;
+         }
+
+      case prf_erase:
+         {
+            out << ind << "erase " << view_erase( ). ind( ) << "\n";
             return;
          }
 

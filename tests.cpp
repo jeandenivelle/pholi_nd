@@ -587,7 +587,42 @@ tests::bigproof( const logic::beliefstate& blfs, errorstack& err )
                            proofterm( prf_deflocal, "Q", indhyp, { 
                               proofterm( prf_forallelim, -1, 
                                  { apply( "Q"_unchecked, { "s1"_unchecked, "s2"_unchecked } ) } ),
-                              proofterm( prf_flatten, -1 ),
+                              proofterm( prf_orexistselimintro, -1, 1, "inductive", { }, 
+                              {
+                                 proofterm( prf_expand, -1, identifier( ) + "homrel", 0 ),
+                                 proofterm( prf_betapi, -1 ),
+                                 proofterm( prf_flatten, -1 ),
+                                 proofterm( prf_orexistselimintro, -1, 0, "base", { },
+                                 {
+                                    proofterm( prf_expandlocal, -1, "Q", 0 ),
+                                    proofterm( prf_betapi, -1 ),
+                                    proofterm( prf_flatten, -1 ),
+                                    proofterm( prf_simplify ),
+                                 }),
+                                 proofterm( prf_orexistselimintro, -1, 0, "step", { "a1", "a2" },
+                                 {
+                                    proofterm( prf_flatten, -1 ),
+                                    proofterm( prf_expandlocal, -1, "Q", 0 ),
+                                    proofterm( prf_betapi, -1 ),
+                                    proofterm( prf_flatten, -1 ),
+                                    proofterm( prf_erase, 3 ),
+                                    proofterm( prf_expandlocal, -2, "Q", 0 ),
+                                    proofterm( prf_betapi, -2 ),
+                                    proofterm( prf_flatten, -2 ),
+                                    proofterm( prf_orexistselimintro, -1, 1, "cases", { "b1", "b2" },
+                                    {
+                                       proofterm( prf_copy, "step", 2 ),
+                                       proofterm( prf_forallelim, -1, { "a1"_unchecked, "a2"_unchecked } ),  
+                                       proofterm( prf_flatten, 0 ),
+                                       proofterm( prf_copy, "step", 0 ), 
+                                       proofterm( prf_copy, "step", 1 ),
+                                       proofterm( prf_simplify ),
+                                       proofterm( prf_import, identifier( ) + "minhomrel_succ", { } ), 
+                                       proofterm( prf_show, "RIGHT" )
+                                    }),
+                                    proofterm( prf_show, "STEP" )
+                                 })
+                              }), 
                               proofterm( prf_orexistselim, -1, "inductive",
                               { 
                                  chain( { proofterm( prf_show, "UNFINISHED1" ) } ),
@@ -601,7 +636,6 @@ tests::bigproof( const logic::beliefstate& blfs, errorstack& err )
                                              proofterm( prf_expandlocal, -2, "Q", 0 ), 
                                              proofterm( prf_betapi, -2 ),
                                              proofterm( prf_flatten, -2 ),
-                                             proofterm( prf_show, "STEP" ),
                                              proofterm( prf_orexistselimintro, -1, 0, "left", { },
                                              {
                                                 proofterm( prf_copy, "step", 2 ), 
