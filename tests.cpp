@@ -504,7 +504,7 @@ void tests::smallproofs( const logic::beliefstate& blfs, errorstack& err )
                                })
                             } )
                          } ) } ), 
-                      chain( { calc::show( "GOAL" ) } )
+                      chain( { calc::show( "GAL" ) } )
                    } ) } )
          } );
 
@@ -571,23 +571,79 @@ tests::bigproof( const logic::beliefstate& blfs, errorstack& err )
       indhyp = lambda( {{ "n1", Nat }, { "n2", Nat }}, indhyp );
    }
 
-   auto propproof =
-      chain( { proofterm( prf_show, "PROP-UNFINISHED" ) } );
+   auto propproof = chain(
+      { 
+         proofterm( prf_expandlocal, -1, "goal", 0 ),
+         proofterm( prf_flatten, -1 ),
+         proofterm( prf_import, identifier( ) + "gen_prop", { Nat, O } ),
+         proofterm( prf_import, identifier( ) + "minhomrel_prop", { Nat, Nat } ), 
+         proofterm( prf_orexistselimintro, -3, 0, "prop", { },
+         {
+            proofterm( prf_copy, "notprop", 0 ),
+            proofterm( prf_flatten, -1 ),
+            proofterm( prf_forallelim, -1, { "s1"_unchecked, "x1"_unchecked } ), 
+            proofterm( prf_simplify ),
+         }),
+         proofterm( prf_orexistselimintro, -1, 0, "prop", { },
+         {
+            proofterm( prf_copy, "notprop", 0 ),
+            proofterm( prf_flatten, -1 ),
+            proofterm( prf_forallelim, -1, { "s2"_unchecked, "x2"_unchecked } ),
+            proofterm( prf_simplify ),
+         }), 
+         proofterm( prf_orexistselimintro, -1, 0, "final", { },
+         {
+            proofterm( prf_flatten, -1 ),
+            proofterm( prf_copy, "notprop", 1 ),
+            proofterm( prf_flatten, -1 ),
+            proofterm( prf_forallelim, -1, { "s1"_unchecked, "s2"_unchecked } ),
+            proofterm( prf_forallelim, -1, { "x1"_unchecked, "x2"_unchecked } ),
+            proofterm( prf_simplify ),
+            proofterm( prf_erase, -1 ),
+            proofterm( prf_orexistselimintro, -1, 0, "finaler", { },
+            {
+               proofterm( prf_copy, "notprop", 0 ),
+               proofterm( prf_flatten, -1 ),
+               proofterm( prf_forallelim, -1, { "s1"_unchecked, "y1"_unchecked } ),
+               proofterm( prf_simplify ),
+            }),
+            proofterm( prf_orexistselimintro, -1, 0, "finaler2", { },
+            {
+               proofterm( prf_copy, "notprop", 0 ),
+               proofterm( prf_flatten, -1 ),
+               proofterm( prf_forallelim, -1, { "s2"_unchecked, "y2"_unchecked } ),
+               proofterm( prf_simplify ),
+            }),
+
+            proofterm( prf_orexistselimintro, -1, 0, "finaler3", { },
+            {
+               proofterm( prf_flatten, -1 ),
+               proofterm( prf_copy, "notprop", 1 ),
+               proofterm( prf_flatten, -1 ),
+               proofterm( prf_forallelim, -1, { "s1"_unchecked, "s2"_unchecked } ),
+               proofterm( prf_forallelim, -1, { "y1"_unchecked, "y2"_unchecked } ),
+               proofterm( prf_simplify ),
+            })
+         }),
+         proofterm( prf_show, "PROP-UNFINISHED" ) 
+      } );
 
    auto mainproof =
       chain( { proofterm( prf_expandlocal, -1, "goal", 0 ),  
                proofterm( prf_flatten, -1 ),
-               proofterm( prf_orexistselim, -1, "outermost",
+               proofterm( prf_show, "BEFORE" ),
+               proofterm( prf_orexistselimintro, -1, 0, "outermost", { },
                { 
-                  chain( { proofterm( prf_flatten, -1 ),
-                           proofterm( prf_expand, -3, identifier( ) + "minhomrel", 0 ),
-                           proofterm( prf_expand, -3, identifier( ) + "minimal", 0 ),
-                           proofterm( prf_betapi, -3 ),
-                           proofterm( prf_flatten, -3 ),
-                           proofterm( prf_deflocal, "Q", indhyp, { 
-                              proofterm( prf_forallelim, -1, 
-                                 { apply( "Q"_unchecked, { "s1"_unchecked, "s2"_unchecked } ) } ),
-                              proofterm( prf_orexistselimintro, -1, 1, "inductive", { }, 
+                  proofterm( prf_flatten, -1 ),
+                  proofterm( prf_expand, -3, identifier( ) + "minhomrel", 0 ),
+                  proofterm( prf_expand, -3, identifier( ) + "minimal", 0 ),
+                  proofterm( prf_betapi, -3 ),
+                  proofterm( prf_flatten, -3 ),
+                  proofterm( prf_deflocal, "Q", indhyp, 
+                  { 
+                     proofterm( prf_forallelim, -1, 
+                     { apply( "Q"_unchecked, { "s1"_unchecked, "s2"_unchecked } ) } ),
+                        proofterm( prf_orexistselimintro, -1, 1, "inductive", { }, 
                               {
                                  proofterm( prf_expand, -1, identifier( ) + "homrel", 0 ),
                                  proofterm( prf_betapi, -1 ),
@@ -618,49 +674,78 @@ tests::bigproof( const logic::beliefstate& blfs, errorstack& err )
                                        proofterm( prf_copy, "step", 1 ),
                                        proofterm( prf_simplify ),
                                        proofterm( prf_import, identifier( ) + "minhomrel_succ", { Nat, Nat } ), 
-                                       proofterm( prf_show, "RIGHT" )
+                                       proofterm( prf_flatten, -1 ),
+                                       proofterm( prf_forallelim, -1, { "s1"_unchecked, "s2"_unchecked } ),
+                                       proofterm( prf_forallelim, -1, { "b1"_unchecked, "b2"_unchecked } ),
+                                       proofterm( prf_simplify ) 
                                     }),
-                                    proofterm( prf_show, "STEP" )
-                                 })
-                              }), 
-                              proofterm( prf_orexistselim, -1, "inductive",
-                              { 
-                                 chain( { proofterm( prf_show, "UNFINISHED1" ) } ),
-                                 chain( { proofterm( prf_expand, -1, identifier( ) + "homrel", 0 ),
-                                          proofterm( prf_betapi, -1 ),
-                                          proofterm( prf_flatten, -1 ),
-                                          proofterm( prf_show, "MAINGOAL" ),
-                                          proofterm( prf_orexistselimintro, -1, 1, "step", { "a1", "a2" }, 
-                                          {
-                                             proofterm( prf_flatten, -1 ),
-                                             proofterm( prf_expandlocal, -2, "Q", 0 ), 
-                                             proofterm( prf_betapi, -2 ),
-                                             proofterm( prf_flatten, -2 ),
-                                             proofterm( prf_orexistselimintro, -1, 0, "left", { },
-                                             {
-                                                proofterm( prf_copy, "step", 2 ), 
-                                                proofterm( prf_expandlocal, -1, "Q", 0 ),
-                                                proofterm( prf_betapi, -1 ),
-                                                proofterm( prf_flatten, -1 ),
-                                                proofterm( prf_show, "CLOSE" )
-                                             } )
-                                          }) 
+                                    proofterm( prf_forallelim, -2, { "a1"_unchecked, "a2"_unchecked } ),
+                                    proofterm( prf_flatten, -1 ), 
+                                    proofterm( prf_simplify ),
+                                    proofterm( prf_import, identifier( ) + "minhomrel_zero", { Nat, Nat } ),
+                                    proofterm( prf_flatten, -1 ),
+                                    proofterm( prf_forallelim, -1, { "s1"_unchecked, "s2"_unchecked } ),
+                                    proofterm( prf_simplify ) 
                                  }),
-                                 chain( { proofterm( prf_expandlocal, -1, "Q", 0 ), 
-                                          proofterm( prf_betapi, -1 ),
-                                          proofterm( prf_flatten, -1 ),
-                                          proofterm( prf_orexistselim, -1, "final",
-                                          { chain( { proofterm( prf_flatten, -1 ),
-                                                     proofterm( prf_copy, "outermost", 2 ), 
-                                                     proofterm( prf_simplify ) } ),
-                                            chain( { proofterm( prf_flatten, -1 ),
-                                                     proofterm( prf_copy, "outermost", 3 ), 
-                                                     proofterm( prf_forallelim, -1, { "y1"_unchecked, "y2"_unchecked } ),
-                                                     proofterm( prf_simplify ) } )}),
-                                          proofterm( prf_show, "FINISHED" ) } )
-                              } )
-                           } )} )
-               })
+                              }), 
+ 
+                              proofterm( prf_orexistselimintro, -1, 1, "cases", { },
+                              {
+                                 proofterm( prf_expandlocal, -1, "Q", 0 ), 
+                                 proofterm( prf_betapi, -1 ),
+                                 proofterm( prf_flatten, -1 ),
+                                 proofterm( prf_orexistselimintro, -1, 1, "quant", { },
+                                 {
+                                    proofterm( prf_copy, "outermost", 3 ),
+                                    proofterm( prf_forallelim, -1, { "y1"_unchecked, "y2"_unchecked } ),
+                                    proofterm( prf_flatten, -2 ),
+                                    proofterm( prf_simplify ),
+                                 }),
+                                 proofterm( prf_flatten, -1 ),
+                                 proofterm( prf_copy, "outermost", 2 ),
+                                 proofterm( prf_simplify ) 
+                              }),
+                              proofterm( prf_expand, -1, identifier( ) + "stricton", 0 ), 
+                              proofterm( prf_expand, -1, identifier( ) + "prod", 0 ), 
+                              proofterm( prf_betapi, -1 ),
+                              proofterm( prf_erase, -2 ),
+                              proofterm( prf_erase, -2 ),
+                              proofterm( prf_erase, -2 ),
+                              proofterm( prf_erase, -2 ),
+                              proofterm( prf_flatten, -1 ),
+                              proofterm( prf_orexistselimintro, -1, 0, "stricton", { "y1", "y2" },
+                              { 
+                                 proofterm( prf_expandlocal, -1, "Q", 0 ),
+                                 proofterm( prf_betapi, -1 ),
+                                 proofterm( prf_flatten, -1 ), 
+                                 proofterm( prf_import, identifier( ) + "gen_prop", { Nat } ), 
+                                 proofterm( prf_flatten, -1 ),
+                                 proofterm( prf_orexistselimintro, -2, 0, "gp", { "z1", "z2" },
+                                 {
+                                    proofterm( prf_copy, "stricton", 2 ),
+                                    proofterm( prf_forallelim, -1, { "s1"_unchecked, "z1"_unchecked } ),   
+                                    proofterm( prf_simplify ),
+                                 }),
+
+                                 proofterm( prf_orexistselimintro, -1, 0, "gp", { "z1", "z2" },
+                                 {
+                                    proofterm( prf_copy, "stricton", 2 ),
+                                    proofterm( prf_forallelim, -1, { "s2"_unchecked, "z2"_unchecked } ),
+                                    proofterm( prf_simplify ),
+                                 }),
+                                 proofterm( prf_orexistselimintro, -1, 0, "gp", { "z1", "z2" },
+                                 {
+                                    proofterm( prf_flatten, -1 ),
+                                    proofterm( prf_import, identifier( ) + "minhomrel_prop", { Nat, Nat } ),
+                                    proofterm( prf_flatten, -1 ),
+                                    proofterm( prf_forallelim, -1, { "s1"_unchecked, "s2"_unchecked } ),
+                                    proofterm( prf_forallelim, -1, { "z1"_unchecked, "z2"_unchecked } ),
+                                    proofterm( prf_simplify ),
+                                 }),
+                              })  
+                           } ),
+               }),
+               proofterm( prf_show, "AFTER DEFLOCAL" )
              });
 
 #if 0
@@ -744,7 +829,7 @@ tests::bigproof( const logic::beliefstate& blfs, errorstack& err )
 
    auto proof = chain( 
       { proofterm( prf_propcut, "goal"_unchecked ), 
-        orexistselim( -1, "notprop_prop", 
+        orexistselim( -1, "notprop", 
         { propproof, 
           chain(
            { proofterm( prf_cut, -1 ),

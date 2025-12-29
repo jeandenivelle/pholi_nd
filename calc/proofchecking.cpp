@@ -62,6 +62,12 @@ std::optional< logic::type >
 calc::checktype( const logic::beliefstate& blfs,
                  logic::term& tm, sequent& seq, errorstack& err )
 {
+   if( seq. ctxt. size( ) != seq. db. size( ))
+   {
+      std::cout << seq. db << "\n";
+      throw std::logic_error( "De Bruijn index wrong size" );
+   }
+
    tm = replace_debruijn( seq. db, std::move(tm) );
 
    size_t ss = seq. ctxt. size( );
@@ -168,7 +174,7 @@ calc::checkproof( const logic::beliefstate& blfs,
 
          if( disj. size( ) < elim. size( ))
          {
-            std::cout << "CRASH IS IMMINENT\n";
+            std::cout << elim. name( ) << "\n";  
             throw std::runtime_error( "disjunction is too small" );
          }
 
@@ -355,6 +361,9 @@ calc::checkproof( const logic::beliefstate& blfs,
 
          std::cout << "alt = " << alt << "\n";
 
+         if( elim. eigen( ). size( ) > alt. vars. size( ))
+            throw std::runtime_error( "existselim: too many variables" );
+
          // Assume the existentially quantified variables of alt:
 
          for( size_t v = 0; v != alt. vars. size( ); ++ v )
@@ -380,7 +389,6 @@ calc::checkproof( const logic::beliefstate& blfs,
             elim. update_sub( i, std::move( subproof ));
          }
 
-         seq. ugly( std::cout ); 
 #if 0
             // Was part of testing. Should be completely removed later:
 
@@ -484,7 +492,8 @@ calc::checkproof( const logic::beliefstate& blfs,
             throw std::logic_error( "something went wrong with the segments" );
 
          seq. pop_back( );
-         seq. ctxt. restore( ss );
+   
+         seq. restore( ss );
 
          atp::simplify( concl. body );
 
@@ -712,27 +721,25 @@ calc::checkproof( const logic::beliefstate& blfs,
             def. update_sub( i, std::move( sub ));
          }
 
-         // We need to apply a substitution:
-#if 0
-         size_t seqsize = seq. size( );
-         seq. define( def. name( ), val, tp. value( ));
-         
-         auto res = proofcheck( def. parent( ), seq, err );
-         if( !res. has_value( ))
-         {
-            seq. restore( seqsize ); 
-            return res; 
-         }
+         // We need to apply the substitution:
 
-         logic::rewriterule rewr( 
-            logic::term( logic::op_exact, seq. getexactname( seqsize )), 
-            val );
+         if( seq. ctxt. size( ) != ss + 1 )
+            throw std::logic_error( "something went wrong with size" );
+ 
+         if( !seq. defs. contains(ss))
+            throw std::logic_error( "something went wrong with def" ); 
 
-         res. value( ) = outermost( rewr, std::move( res. value( )), 0 );
-         seq. restore( seqsize );
-         return res;
-#endif
-         throw std::logic_error( "deflocal unfinished" );
+         auto subst = logic::singlesubst( seq. defs. at(ss));
+         std::cout << subst << "\n";
+
+         for( auto& fm : seq. back( ))
+            fm = outermost( subst, std::move( fm ), 0 );
+
+         seq. restore(ss);
+         -- seq. back( ). contextsize;
+
+         std::cout << "deflocal is not terribly well tested\n";
+         return; 
       }
 #if 0
    case prf_forallintro:
@@ -808,11 +815,11 @@ calc::checkproof( const logic::beliefstate& blfs,
             auto tp = checktype( blfs, inst, seq, err );
 
             if( tp. has_value( ))
-               std::cout << tp. value( ) << "\n";
+               std::cout << "found type: " << tp. value( ) << "\n";
             else
                std::cout << "(no type)\n";
 
-            std::cout << "must be " << mainform. vars[i]. tp << "\n";
+            std::cout << "must be: " << mainform. vars[i]. tp << "\n";
 
             if( ! tp. has_value( ) ||  
                 !equal( tp. value( ), mainform. vars[i]. tp ))
@@ -852,6 +859,7 @@ calc::checkproof( const logic::beliefstate& blfs,
 
          if( !alltypescorrect )
          {
+            seq. ugly( std::cout );
             throw std::runtime_error( "we cannot do forallinst, types wrong" );
          }
 

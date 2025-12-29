@@ -106,6 +106,8 @@ namespace calc
       size_t define( const std::string& name, const logic::term& val,
                      const logic::type& tp );
 
+      void restore( size_t ss );
+
       void push_back( const std::string& name );
       void pop_back( );
          // Add or remove a segment.

@@ -14,6 +14,7 @@ def gen( s: Nat )( x : Obj ) :=
    [ P : Form( Obj ) ] { strict(P) } -> s. isclosed(P) -> P(x) : Form ;
 
 thm gen_prop : [ s : Nat, x : Obj ] # s. gen(x) ; 
+
 thm gen_0 :    [ s : Nat ] s. gen( s. 0 ) ; 
 thm gen_succ : [ s : Nat, x : Obj ] s. gen(x) -> s. gen( s. succ(x)) ;
 
@@ -42,6 +43,10 @@ thm minhomrel_succ :
       { s1. gen( x1 ) & s2. gen( x2 ) } ->       
       minhomrel( s1, s2, x1, x2 ) 
           -> minhomrel( s1, s2, s1. succ( x1 ), s2. succ( x2 ));
+
+thm minhomrel_prop :
+   [ s1, s2 : Nat ] [ x1, x2 : Obj ]
+      { s1. gen( x1 ) & s2. gen( x2 ) } -> # minhomrel( s1, s2, x1, x2 );
 
 thm just : [ s1,s2: Nat ] [ x1,x2: Obj ] 
    { s1. gen(x1) & s2.gen(x2) } -> minhomrel( s1, s2, x1, x2 ) -> 

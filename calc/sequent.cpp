@@ -123,33 +123,19 @@ calc::sequent::getexactname( size_t i ) const
    throw std::logic_error( "cannot get exact name" );
 }
 
+#endif
 
 void calc::sequent::restore( size_t ss )
 {
-   // If anything got blocked, we unblock it:
-
-   while( ss < steps. size( )) 
+   for( size_t dd = ss; dd < ctxt. size( ); ++ dd )
    {
-      switch( steps. back( ). sel( ))
-      {
-      case seq_belief:
-         {
-            auto bl = steps. back( ). view_belief( );
-            blfs. backtrack( bl. name( ));
-         }
-         break;
-      case seq_blocking:
-         {
-            size_t nr = steps. back( ). view_blocking( ). nr( );
-            steps[ nr ]. view_belief( ). visible( ) = true;
-         }
-         break;
-      }
-      steps. pop_back( );
+      if( defs. contains( dd ))
+         defs. erase(dd);
    }
-}
 
-#endif
+   ctxt. restore(ss);
+   db. restore(ss);
+}
 
 void calc::sequent::ugly( std::ostream& out ) const
 {
