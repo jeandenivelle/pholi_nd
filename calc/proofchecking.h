@@ -29,6 +29,10 @@ namespace calc
    checktype( const logic::beliefstate& blfs,
               logic::term& tm, sequent& seq, errorstack& err );
 
+   bool applicable( const logic::belief& blf, 
+                    const std::vector< logic::type > & tps );
+      // True if blf (as theorem) is applicable on tps.
+
    void checkproof( const logic::beliefstate& blfs,
                     proofterm& prf, sequent& seq, errorstack& err );
       // In case of failure, we vent our frustration into err, and 

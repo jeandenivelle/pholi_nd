@@ -85,6 +85,33 @@ calc::checktype( const logic::beliefstate& blfs,
    return tp; 
 }
 
+// Function should be moved, and also used when a proof is started.
+
+bool 
+calc::applicable( const logic::belief& blf, 
+                  const std::vector< logic::type > & tps )
+{
+   if( blf. sel( ) != logic::bel_axiom && 
+       blf. sel( ) != logic::bel_thm )
+   {
+      return false;
+   }
+
+   const auto& fm = blf. view_form( );
+
+   if( tps. size( ) > fm. size( ))
+      return false;
+
+   for( size_t i = 0; i != tps. size( ); ++ i )
+   {
+      if( !equal( fm. tp(i), tps. at(i)) )
+         return false; 
+   }
+
+   return true;
+}
+
+
 void
 calc::checkproof( const logic::beliefstate& blfs,
                   proofterm& prf, sequent& seq, errorstack& err )
@@ -93,33 +120,6 @@ calc::checkproof( const logic::beliefstate& blfs,
 
    switch( prf. sel( ))
    {
-
-#if 0
-   case prf_ident:
-      {
-         auto id = prf. view_ident( ). ident( );
-         const auto& f = seq. blfs. getformulas( id ); 
-         if( f. empty( ))
-         {
-            errorstack::builder bld;
-            bld << "unknown identifier " << id << " was used in a proof\n";
-            bld << seq << "\n";
-            err. push( std::move( bld ));
-            return { };
-         }
-
-         if( f. size( ) > 1 )
-         {
-            errorstack::builder bld; 
-            bld << "ambiguous identifier " << id << " was used in a proof\n";
-            bld << seq << "\n";
-            err. push( std::move( bld ));
-            return { };
-         }
-
-         return seq. getformula( f. front( ), err );
-      }
-#endif
 
    case prf_flatten: 
       {
@@ -867,50 +867,71 @@ calc::checkproof( const logic::beliefstate& blfs,
          seq. back( ). at( elim. ind( )) = std::move( mainform );
          return;  
       }
-#if 0
 
-   case prf_select:
+   case prf_import:
       {
-         auto sel = prf. view_select( );
-         auto fm = proofcheck( sel. parent( ), seq, err );
-         if( !fm. has_value( ))
-            return fm;
+         auto imp = prf. view_import( );
 
-         auto conj = optform( std::move( fm ), "select", seq, err );
-         conj. musthave( logic::op_kleene_and );
-         if( !conj ) 
-            return { };
+         // We need to make the types exact:
 
-         auto errsize = err. size( );
+         std::vector< logic::type > types;
 
-         auto kl = conj. value( ). view_kleene( );
-         auto result = logic::term( 
-              logic::op_kleene_and,
-              std::initializer_list< logic::term > ( )); 
+         bool alltypescorrect = true;
 
-         for( size_t i = 0; i != sel. size( ); ++ i )
+         for( size_t i = 0; i != imp. size( ); ++ i )
          {
-            if( sel. nr(i) >= kl. size( ))
-            {
-               auto bld = errorstack::builder( );
-               bld << "selected subterm " << sel. nr(i);
-               bld << " >= " << kl. size( ); 
-               err. push( std::move( bld )); 
-            }
+            auto tp = imp. extr_tp(i);
+            bool b = checkandresolve( blfs, err, tp );
+            if(b)
+               types. push_back( tp );
             else
-               result. view_kleene( ). push_back( kl. sub( sel. nr(i) ));
-         } 
+               alltypescorrect = false;
 
-         if( err. size( ) > errsize )
-         {
-            auto bld = printing::makeheader( seq, "select" );
-            err. addheader( errsize, std::move( bld ));
+            imp. update_tp( i, tp );
          }
 
-         return result;
-      }
+         if( !alltypescorrect )
+            throw std::logic_error( "import : failed type checking" );
 
-#endif
+         const auto& ident = imp. ident( );
+         const auto& overcands = blfs. getformulas( ident ); 
+
+         size_t nrapplicable = 0;
+         size_t lastapplicable = 0;
+ 
+         for( size_t i = 0; i != overcands. size( ); ++ i )
+         {
+            auto ex = overcands. at(i);
+            const auto& form = blfs. at(ex);
+            if( applicable( form, types ))
+            {
+               ++ nrapplicable;
+               lastapplicable = i;
+            }
+         }
+
+         // If nrapplicable == 1, we found a usable overload,
+         // otherwise it's error.
+
+         if( nrapplicable == 0 )
+         {
+            std::cout << imp. ident( ) << "\n";
+            throw std::runtime_error( "no overload found" );
+         }
+
+         if( nrapplicable > 1 )
+         {
+            std::cout << imp. ident( ) << "\n";
+            throw std::runtime_error( "too many overloads" );
+         }
+
+         std::cout << lastapplicable << "\n";
+         const auto& picked = blfs. at( overcands. at( lastapplicable ));
+         const auto& fm = picked. view_form( ). fm( );
+
+         seq. back( ). push( forall( disjunction{ exists( fm ) } )); 
+         return;  
+      }
  
    case prf_simplify:
       {
@@ -972,7 +993,6 @@ calc::checkproof( const logic::beliefstate& blfs,
          seq. pretty( out );
          return;
       } 
-
    }
 
    std::cout << prf. sel( ) << "\n";

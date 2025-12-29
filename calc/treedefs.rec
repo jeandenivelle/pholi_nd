@@ -44,7 +44,7 @@
    name : std::string, val : logic::term, [ sub : proofterm ]
 
 %option import { prf_import } =>
-   ident : identifier, [ value : logic::term ]
+   ident : identifier, [ tp : logic::type ]
 
 %option simplify { prf_simplify } => 
    // Always the complete toplevel.
@@ -151,7 +151,7 @@
 
       case prf_betapi:
          {
-            out << ind << "pibeta" << view_betapi( ). ind( ) << "\n";
+            out << ind << "pibeta " << view_betapi( ). ind( ) << "\n";
             return;
          }
 
@@ -182,6 +182,21 @@
             return;
          }
 
+      case prf_import:
+         {
+            auto imp = view_import( );
+            out << ind << "import " << imp. ident( );
+            if( imp. size( ))
+            {
+               out << "( " << imp. tp(0); 
+               for( size_t i = 1; i != imp. size( ); ++ i )
+                  out << ", " << imp. tp(i);
+               out << " )";  
+            }
+            out << '\n';
+            return;
+         }
+
       case prf_forallintro:
          {
             auto intro = view_forallintro( );
@@ -200,11 +215,14 @@
       case prf_forallelim:
          {
             auto elim = view_forallelim( );
-            out << ind << "forallelim with ";
+            out << ind << "forallelim";
             for( size_t i = 0; i != elim. size( ); ++ i )
             {
-               if(i) out << ",  ";
-               out << elim. value(i) << "\n";
+               if(i) 
+                  out << ", ";
+               else
+                  out << ' ';
+               out << elim. value(i);
             }
             out << " in " << elim. ind( ) << "\n";
             return;

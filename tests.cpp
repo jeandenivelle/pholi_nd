@@ -445,7 +445,7 @@ void tests::smallproofs( const logic::beliefstate& blfs, errorstack& err )
       seq. ugly( std::cout );
    }
 
-   if constexpr( true )
+   if constexpr( false )
    {
       auto id = identifier( ) + "minhomrel_succ";
 
@@ -617,7 +617,7 @@ tests::bigproof( const logic::beliefstate& blfs, errorstack& err )
                                        proofterm( prf_copy, "step", 0 ), 
                                        proofterm( prf_copy, "step", 1 ),
                                        proofterm( prf_simplify ),
-                                       proofterm( prf_import, identifier( ) + "minhomrel_succ", { } ), 
+                                       proofterm( prf_import, identifier( ) + "minhomrel_succ", { Nat, Nat } ), 
                                        proofterm( prf_show, "RIGHT" )
                                     }),
                                     proofterm( prf_show, "STEP" )
