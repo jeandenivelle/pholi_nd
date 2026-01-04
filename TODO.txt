@@ -6,7 +6,9 @@
 - Consider adding subformula replacement? Originally it was core
   of the resolution-based calculus. Now it seems irrelevant.
 - Are terms p(t1)(t2) and p(t1,t2) treated as equal?
+  Is there a reduction that makes them equal? Should they be equal? 
 - orelim moves result to last place. Is that right? 
+- I think that the sequent data structures need another revision.
 
 
 
