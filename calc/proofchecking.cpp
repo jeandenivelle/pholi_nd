@@ -512,59 +512,28 @@ calc::checkproof( const logic::beliefstate& blfs,
          return; 
       }
 
-   case prf_propcut:
-      {
-         auto cut = prf. view_propcut( );
- 
-         auto fm = cut. extr_fm( );  
-         size_t ss = seq. ctxt. size( );
-         fm = replace_debruijn( seq. db, fm );
- 
-         auto tp = checkandresolve( blfs, err, seq. ctxt, fm );
-         if( !tp. has_value( ) || tp. value( ). sel( ) != logic::type_form )
-         {
-            std::cout << "wrong type!\n";
-            throw std::logic_error( "no type" ); 
-         }
-
-         cut. update_fm( fm );
-         fm = logic::term( logic::op_prop, fm );
-
-         seq. back( ). push( forall( disjunction{ 
-                exists( logic::term( logic::op_not, fm )), exists(fm) } ));
-
-         return;
-      }
-
    case prf_cut:
       {
          auto cut = prf. view_cut( );
 
-         if( !seq. back( ). inrange( cut. ind( )) )
-            throw std::runtime_error( "cut: index out of range" );
+         auto fm = cut. extr_fm( );  
 
-         auto fm = seq. back( ). at( cut. ind( ));
-            // We don't consume, because we expect to need
-            // Propness many times. 
+         auto tp = checktype( blfs, fm, seq, err );
+         if( !tp. has_value( ) || tp. value( ). sel( ) != logic::type_form )
+         {
+            std::cout << "wrong type!\n";
+            throw std::logic_error( "cut: type is not FORM" ); 
+         }
+         cut. update_fm( fm );
 
-         if( fm. vars. size( ))
-            throw std::runtime_error( "cut: Formula has variables" );
+         auto f1 = logic::term( logic::op_not, 
+                      logic::term( logic::op_prop, fm ));
+         auto f2 = logic::term( logic::op_not, fm );
+         auto f3 = std::move( fm );
 
-         if( fm. body. size( ) != 1 )
-            throw std::runtime_error( "cut: Formula not a singleton" );
+         seq. back( ). push( forall( disjunction{ 
+                exists(f1), exists(f2), exists(f3) } ));
 
-         if( fm. body. at(0). vars. size( ))
-            throw std::runtime_error( "cut: Formula has existential variables" );
-         auto prp = std::move( fm. body. at(0). body );
-
-         if( prp. sel( ) != logic::op_prop )
-            throw std::runtime_error( "cut: Formula not prop" );
-
-         auto cutform = prp. view_unary( ). sub( );
-         fm. body. at(0). body = logic::term( logic::op_not, cutform );
-         fm. body. append( exists( cutform ));
- 
-         seq. back( ). push( std::move( fm ));
          return;
       }
 
@@ -643,8 +612,6 @@ calc::checkproof( const logic::beliefstate& blfs,
    case prf_betapi:
       { 
          auto ind = prf. view_betapi( ). ind( );
-         std::cout << ind << "\n";
- 
          if( !seq. back( ). inrange( ind ))
             throw std::logic_error( "betapi: index out of range" );
 
@@ -799,7 +766,9 @@ calc::checkproof( const logic::beliefstate& blfs,
          if( mainform. vars. size( ) < elim. size( ))
          {
             throw std::runtime_error( "forallelim: Too many values" );
-            // We could just eliminate a few. 
+
+            // We allow more variables than values, because it is not
+            // required to eliminate all at once.
          }
  
          size_t errstart = err. size( );

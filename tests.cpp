@@ -381,7 +381,7 @@ void tests::smallproofs( const logic::beliefstate& blfs, errorstack& err )
 
    // This is the first proof that passed!
 
-   if constexpr( false ) 
+   if constexpr( true ) 
    {
       // This proof was completed on 16 december 2025, 05.23 CET.
 
@@ -391,61 +391,88 @@ void tests::smallproofs( const logic::beliefstate& blfs, errorstack& err )
       if( f. size( ) != 1 )
          throw std::runtime_error( "cannot continue" );
       auto seq = sequent( );
+
       auto nr = seq. define( "goal",
                              blfs. at( f. front( )). view_form( ). fm( ),
                              logic::type( logic::type_form ));
       seq. push_back( "start" );
-      seq. ugly( std::cout );
-
-      auto split = orexistselim( -1, "propcut", 
-         { chain( 
-              { proofterm( prf_expandlocal, -1, "goal", 0 ),
-                proofterm( prf_flatten, -1 ),
-                orexistselim( -1, "xxx",
-                   { chain( { proofterm( prf_flatten, - 1 ),
-                        orexistselim( -1, "yyy", { 
-                           chain( { proofterm( prf_copy, "xxx", 0 ),
-                                    proofterm( prf_forallelim, -1, { 0_db } ),
-                                    prf_simplify } ),
-                           chain( 
-                              { proofterm( prf_copy, "xxx", 1 ), 
-                                proofterm( prf_forallelim, -1, { 0_db } ),
-                                prf_simplify
-                              } ),
-                           chain( { proofterm( prf_copy, "xxx", 0 ),
-                                    proofterm( prf_forallelim, -1, { 0_db } ),
-                                    prf_simplify } ),
-                           chain(
-                              { proofterm( prf_copy, "xxx", 2 ),
-                                proofterm( prf_forallelim, -1, { 0_db } ),
-                                prf_simplify
-                              } ),
-                            chain(
-                              { proofterm( prf_copy, "xxx", 1 ),
-                                proofterm( prf_forallelim, -1, { 0_db } ),
-                                prf_simplify,
-                              } ),
-                            chain(
-                              { proofterm( prf_copy, "xxx", 2 ),
-                                proofterm( prf_forallelim, -1, { 0_db } ),
-                                prf_simplify 
-                              } ) 
-                            } ),
-                           calc::show( "SHOULD BE EMPTY" ) }
-                     ) } )  
-              } ),
-           chain( { prf_nop } ) } );
  
-      auto prf = proofterm( prf_propcut, "goal"_unchecked );
-      prf = chain( { prf, split } );
+      auto prf = chain( 
+      { 
+         proofterm( prf_cut, "goal"_unchecked ),
+
+         // We expand the 'goal' before the split,
+         // that saves an existsintro:
+
+         proofterm( prf_expandlocal, -1, "goal", 0 ),
+         proofterm( prf_flatten, -1 ),
+         proofterm( prf_orexistselimintro, -1, 0, "prop", { },
+         {
+            proofterm( prf_flatten, -1 ),
+            proofterm( prf_orexistselimintro, -1, 0, "nr", { },
+            {
+               proofterm( prf_copy, "prop", 0 ),
+               proofterm( prf_forallelim, -1, { 0_db } ),
+               proofterm( prf_simplify ), 
+            }),
+
+            proofterm( prf_orexistselimintro, -1, 0, "nr", { },
+            {
+               proofterm( prf_copy, "prop", 1 ),
+               proofterm( prf_forallelim, -1, { 0_db } ),
+               proofterm( prf_simplify ) 
+            }),
+            proofterm( prf_orexistselimintro, -1, 0, "nr", { },
+            {
+               proofterm( prf_copy, "prop", 0 ),
+               proofterm( prf_forallelim, -1, { 0_db } ),
+               proofterm( prf_simplify ) 
+            }),
+            proofterm( prf_orexistselimintro, -1, 0, "nr", { },
+            {
+               proofterm( prf_copy, "prop", 2 ),
+               proofterm( prf_forallelim, -1, { 0_db } ),
+               proofterm( prf_simplify ) 
+            }),
+            proofterm( prf_orexistselimintro, -1, 0, "nr", { },
+            {
+               proofterm( prf_copy, "prop", 1 ),
+               proofterm( prf_forallelim, -1, { 0_db } ),
+               proofterm( prf_simplify ) 
+            }),
+            proofterm( prf_orexistselimintro, -1, 0, "nr", { },
+            {
+               proofterm( prf_copy, "prop", 2 ),
+               proofterm( prf_forallelim, -1, { 0_db } ),
+               proofterm( prf_simplify ),
+            }) 
+         }),
+         proofterm( prf_expandlocal, -1, "goal", 0 ),
+         proofterm( prf_flatten, -1 ),
+         proofterm( prf_orexistselimintro, -1, 0, "negated", { }, 
+         {
+            // This is the refutation of the negated goal:
+
+            proofterm( prf_flatten, -1 ),
+            proofterm( prf_orexistselimintro, -1, 0, "aa", { },
+            {
+               proofterm( prf_flatten, -1 ),
+               proofterm( prf_copy, "negated", 3 ),
+               proofterm( prf_forallelim, -1, { 0_db } ), 
+               proofterm( prf_copy, "negated", 4 ),
+               proofterm( prf_forallelim, -1, { 0_db } ),
+               proofterm( prf_simplify) 
+            }) 
+         }) 
+      });
       prf. print( indentation( ), std::cout );
 
       checkproof( blfs, prf, seq, err );
-      std::cout << "\n";
+      std::cout << "FINAL STATE" << id << " :\n";
       seq. ugly( std::cout );
    }
 
-   if constexpr( false )
+   if constexpr( true )
    {
       auto id = identifier( ) + "minhomrel_succ";
 
@@ -462,6 +489,7 @@ void tests::smallproofs( const logic::beliefstate& blfs, errorstack& err )
       seq. push_back( "goal" );
       seq. ugly( std::cout );
 
+#if 0
       auto splitprop = orexistselim( -1, "prop",
          {
             chain( { calc::show( "NOTPROP" ) } ),
@@ -476,20 +504,12 @@ void tests::smallproofs( const logic::beliefstate& blfs, errorstack& err )
                             chain( 
                             {
                                proofterm( prf_flatten, -1 ),
-                               proofterm( prf_expand, 2, identifier( ) + "minhomrel", 0 ),
-                               proofterm( prf_expand, 3, identifier( ) + "minhomrel", 0 ),
-                               proofterm( prf_expand, 2, identifier( ) + "minimal", 0 ),
-                               proofterm( prf_expand, 3, identifier( ) + "minimal", 0 ),
-                               proofterm( prf_betapi, 2 ), 
-                               proofterm( prf_betapi, 3 ),
 
-                               proofterm( prf_flatten, 2 ),
                                proofterm( prf_flatten, 2 ),
                                orexistselim( -1, "R",
                                {
                                   chain(
                                   {
-                                     proofterm( prf_flatten, -1 ),
                                      proofterm( prf_copy, "R", -2 ),
                                      proofterm( prf_expand, -1, identifier( ) + "homrel", 0 ),
                                      proofterm( prf_betapi, -1 ),
@@ -508,13 +528,81 @@ void tests::smallproofs( const logic::beliefstate& blfs, errorstack& err )
                    } ) } )
          } );
 
-      auto prf = proofterm( prf_propcut, "goal"_unchecked );
-      prf = chain( { prf, splitprop } );
+#endif
+      auto prf = chain( 
+      { 
+         proofterm( prf_cut, "goal"_unchecked ), 
+         proofterm( prf_expandlocal, -1, "goal", 0 ),
+         proofterm( prf_flatten, -1 ),
+         proofterm( prf_orexistselimintro, -1, 0, "notprop", { },
+         {
+            proofterm( prf_import, identifier( ) + "gen_prop", { Nat, O } ),
+            proofterm( prf_flatten, -1 ),
+            proofterm( prf_forallelim, -1, { 3_db, 1_db } ),
+            proofterm( prf_simplify ) 
+         }),
+         proofterm( prf_orexistselimintro, -1, 0, "notprop", { },
+         {
+            proofterm( prf_import, identifier( ) + "gen_prop", { Nat, O } ),
+            proofterm( prf_flatten, -1 ),
+            proofterm( prf_forallelim, -1, { 2_db, 0_db } ),
+            proofterm( prf_simplify ) 
+         }),
+         proofterm( prf_flatten, -1 ),
+         proofterm( prf_orexistselimintro, -1, 0, "notprop", { },
+         {
+            proofterm( prf_flatten, -1 ),
+            proofterm( prf_import, identifier( ) + "minhomrel_prop", { Nat, Nat } ), 
+            proofterm( prf_flatten, -1 ),
+            proofterm( prf_forallelim, -1, { 3_db, 2_db } ),
+            proofterm( prf_copy, "notprop", -1 ), 
+            proofterm( prf_forallelim, -1, { 1_db, 0_db } ),
+            proofterm( prf_simplify ),
+            proofterm( prf_copy, "notprop", 0 ),
+            proofterm( prf_forallelim, -1, 
+                 { apply( "succ"_unchecked, { 3_db, 1_db } ),
+                   apply( "succ"_unchecked, { 2_db, 0_db } ) } ),
+            proofterm( prf_simplify ),
+            proofterm( prf_import, identifier( ) + "gen_succ", { Nat, O } ), 
+            proofterm( prf_flatten, -1 ),
+            proofterm( prf_copy, "notprop", -1 ),
+            proofterm( prf_forallelim, -1, { 3_db, 1_db } ),
+            proofterm( prf_forallelim, -2, { 2_db, 0_db } ),
+            proofterm( prf_simplify )
+         }),
+         proofterm( prf_expandlocal, -1, "goal", 0 ),
+         proofterm( prf_flatten, -1 ),
+         proofterm( prf_orexistselimintro, -1, 0, "negated", { },
+         {
+            proofterm( prf_flatten, -1 ),
+            proofterm( prf_expand, 2, identifier( ) + "minhomrel", 0 ),
+            proofterm( prf_expand, 3, identifier( ) + "minhomrel", 0 ),
+            proofterm( prf_expand, 2, identifier( ) + "minimal", 0 ),
+            proofterm( prf_expand, 3, identifier( ) + "minimal", 0 ),
+            proofterm( prf_betapi, 2 ), 
+            proofterm( prf_betapi, 3 ),
+            proofterm( prf_flatten, -1 ),
+            proofterm( prf_orexistselimintro, -1, 0, "R", { "R" },
+            {
+               proofterm( prf_flatten, -1 ),
+               proofterm( prf_copy, "R", -2 ),
+               proofterm( prf_expand, -1, identifier( ) + "homrel", 0 ),
+               proofterm( prf_betapi, -1 ),
+               proofterm( prf_flatten, -1 ),
+
+               proofterm( prf_show, "NEG" )
+
+            }),
+            proofterm( prf_show, "NEGATED" ) 
+         }),
+         proofterm( prf_show, "XXXX" ) 
+      });
+
       prf. print( indentation( ), std::cout );
 
       checkproof( blfs, prf, seq, err );
       std::cout << "\n";
-      std::cout << "FINAL STATE\n";
+      std::cout << "FINAL STATE " << id << "\n";
       seq. ugly( std::cout );
    }
 }
@@ -749,9 +837,6 @@ tests::bigproof( const logic::beliefstate& blfs, errorstack& err )
              });
 
 #if 0
-   auto fakecontr = proofterm( prf_fake, logic::op_false );
-   auto exists = clausify( "initial0001"_assumption ); 
-
    auto prf3 = proofterm( prf_ident, identifier( ) + "forall0001" );
    auto inst = apply( "Q0001"_unchecked, { "s0001"_unchecked, "s0002"_unchecked } );
 
@@ -827,6 +912,7 @@ tests::bigproof( const logic::beliefstate& blfs, errorstack& err )
       std::cout << "(evaluation of main proof failed)\n";
 #endif
 
+#if 0
    auto proof = chain( 
       { proofterm( prf_propcut, "goal"_unchecked ), 
         orexistselim( -1, "notprop", 
@@ -844,6 +930,7 @@ tests::bigproof( const logic::beliefstate& blfs, errorstack& err )
    std::cout << "\n";
    std::cout << "FINAL STATE\n";
    seq. ugly( std::cout );
+#endif
 }
 
 

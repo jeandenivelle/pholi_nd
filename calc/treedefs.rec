@@ -4,8 +4,7 @@
 
 %define proofterm ( prf_nop ) 
 
-%option propcut { prf_propcut } => fm : logic::term
-%option cut { prf_cut } => ind : ssize_t 
+%option cut { prf_cut } => fm : logic::term
 
 %option chain { prf_chain } => [ step : proofterm ] 
 %option nop { prf_nop } => 
@@ -73,21 +72,10 @@
    {
       switch( sel( ))
       {
-//      case prf_truthconst:
-//         out << ind << "truthconst\n";
-//         return; 
 
-//      case prf_ident:
-//         out << ind << "ident " << view_ident( ). ident( ) << "\n"; 
-//         return; 
-
-      case prf_propcut:
-         out << ind << "propcut: " << view_propcut( ). fm( ) << "\n";
+      case prf_cut:
+         out << ind << "cut: " << view_cut( ). fm( ) << "\n";
          return;
-
-     case prf_cut:
-        out << ind << "cut " << view_cut( ). ind( ) << "\n";
-        return;
 
       case prf_chain: 
          {

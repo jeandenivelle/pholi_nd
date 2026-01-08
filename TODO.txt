@@ -9,6 +9,7 @@
   Is there a reduction that makes them equal? Should they be equal? 
 - orelim moves result to last place. Is that right? 
 - I think that the sequent data structures need another revision.
+  The sequent data structure must support automatic exists-intro.
 
 
 

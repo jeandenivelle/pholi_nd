@@ -46,7 +46,7 @@ namespace calc
          print << qname;
          logic::pretty::print( print. out, print. blfs, print. names,
             [&vars]( size_t i ) { return vars. at(i); }, vars. size( ));
-         print << ' ';
+         print << " IN ";
       }
 
       print << body;
